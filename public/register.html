@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Cadastro - EsporteAgenda</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f0f8ff;
+            position: relative;
+            overflow: hidden;
+            margin: 0;
+        }
+        .background-shape {
+            position: absolute;
+            background: #00ff6a;
+            filter: blur(5px);
+            opacity: 0.9;
+            z-index: -1;
+            border-radius: 30px;
+        }
+        .shape1 {
+            width: 250px;
+            height: 250px;
+            top: -50px;
+            left: -50px;
+            border-radius: 50%;
+            background: #2bbf2b;
+        }
+        .shape2 {
+            width: 350px;
+            height: 300px;
+            bottom: 80px;
+            left: 40px;
+            transform: rotate(20deg);
+        }
+        .shape3 {
+            width: 450px;
+            height: 350px;
+            top: 50px;
+            right: -120px;
+            transform: rotate(-15deg);
+        }
+        .shape4 {
+            width: 100%;
+            height: 60px;
+            background: #2bbf2b;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+            width: 400px;
+            position: relative;
+            z-index: 1;
+        }
+        .container h2 {
+            color: #333;
+            font-weight: 700;
+        }
+        .container a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            margin: 12px 0;
+            text-align: left;
+        }
+        .input-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .input-group input,
+        .input-group select { /* Adicionado estilo para o select */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+        }
+        .button {
+            background: #ffcc00;
+            color: black;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            transition: 0.3s;
+        }
+        .button:hover {
+            background: #ff9900;
+        }
+        .links {
+            margin-top: 10px;
+        }
+        .error-text {
+            color: red;
+            font-size: 0.9em;
+            height: 1.2em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-shape shape1"></div>
+    <div class="background-shape shape2"></div>
+    <div class="background-shape shape3"></div>
+    <div class="background-shape shape4"></div>
+
+    <div class="container">
+        <h2>Crie sua conta no <a href="home.html">EsporteAgenda</a></h2>
+        <p>Preencha os campos para começar.</p>
+        <form id="register-form">
+            <div class="input-group">
+                <label>Nome Completo</label>
+                <input id="nome" type="text" name="nome" placeholder="Digite seu nome" required />
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input id="email" type="email" name="email" placeholder="Digite seu email" required />
+            </div>
+            <div class="input-group">
+                <label>Senha</label>
+                <input id="senha" type="password" name="senha" placeholder="Crie uma senha" required />
+            </div>
+            <div class="input-group">
+                <label>Confirmar Senha</label>
+                <input id="confirmar-senha" type="password" name="confirmarSenha" placeholder="Confirme sua senha" required />
+            </div>
+            
+            <div class="input-group">
+                <label for="tipo-usuario">Qual seu objetivo?</label>
+                <select id="tipo-usuario" name="tipo" required>
+                    <option value="cliente" selected>Quero reservar quadras (Cliente)</option>
+                    <option value="dono">Quero cadastrar minhas quadras (Dono)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="button">CADASTRAR</button>
+            <p id="error-message" class="error-text"></p>
+        </form>
+        <div class="links">
+            <a href="login.html">Já tem uma conta? Faça login</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('register-form');
+        const errorMessage = document.getElementById('error-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMessage.textContent = '';
+
+            const nome = document.getElementById('nome').value;
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const confirmarSenha = document.getElementById('confirmar-senha').value;
+            const tipo = document.getElementById('tipo-usuario').value; // <<< SCRIPT ATUALIZADO
+
+            if (senha !== confirmarSenha) {
+                errorMessage.textContent = 'As senhas não coincidem. Tente novamente.';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // SCRIPT ATUALIZADO para enviar o 'tipo'
+                    body: JSON.stringify({ nome, email, senha, tipo })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Registro realizado com sucesso! Você será redirecionado para a página de login.');
+                    window.location.href = '/login.html';
+                } else {
+                    errorMessage.textContent = data.message;
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Não foi possível conectar ao servidor. Tente novamente.';
+            }
+        });
+    </script>
+</body>
+</html>

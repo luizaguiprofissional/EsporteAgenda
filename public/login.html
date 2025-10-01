@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Login - EsporteAgenda</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            margin: 0;
+        }
+        .background-shape {
+            position: absolute;
+            background: #00ff6a;
+            filter: blur(10px);
+            opacity: 0.8;
+            z-index: -1;
+            border-radius: 30px;
+        }
+        .shape1 {
+            width: 200px;
+            height: 200px;
+            top: -50px;
+            left: -50px;
+            border-radius: 50%;
+            background: #2bbf2b;
+        }
+        .shape2 {
+            width: 300px;
+            height: 250px;
+            bottom: 50px;
+            left: 30px;
+            transform: rotate(20deg);
+        }
+        .shape3 {
+            width: 400px;
+            height: 300px;
+            top: 50px;
+            right: -100px;
+            transform: rotate(-15deg);
+        }
+        .shape4 {
+            width: 100%;
+            height: 50px;
+            background: #2bbf2b;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.2);
+            width: 350px;
+            position: relative;
+            z-index: 1;
+        }
+        .container h2 {
+            color: #333;
+            font-weight: 700;
+        }
+        .container a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            margin: 12px 0;
+            text-align: left;
+        }
+        .input-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .button {
+            background: #ffcc00;
+            color: black;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            transition: 0.3s;
+        }
+        .button:hover {
+            background: #ff9900;
+        }
+        .links {
+            margin-top: 10px;
+        }
+        .links a {
+            display: block;
+            margin: 5px 0;
+        }
+        .error-text {
+            color: red;
+            font-size: 0.9em;
+            height: 1.2em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-shape shape1"></div>
+    <div class="background-shape shape2"></div>
+    <div class="background-shape shape3"></div>
+    <div class="background-shape shape4"></div>
+
+    <div class="container">
+        <h2>Bem vindo ao <a href="home.html">EsporteAgenda</a></h2>
+        <p>Alugue sua quadra de forma fácil!</p>
+        <form id="login-form">
+            <div class="input-group">
+                <label>Email</label>
+                <input id="email" name="email" placeholder="Digite seu e-mail" type="email" required/>
+            </div>
+            <div class="input-group">
+                <label>Senha</label>
+                <input id="senha" name="senha" placeholder="Digite sua senha" type="password" required/>
+            </div>
+            <button type="submit" class="button">ENTRAR</button>
+            <p id="error-message" class="error-text"></p>
+        </form>
+        <div class="links">
+            <a href="forgot-password.html">Esqueceu a senha?</a>
+            <a href="register.html">Primeiro acesso?</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMessage.textContent = '';
+            
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    // Login bem-sucedido
+                    localStorage.setItem('accessToken', data.accessToken);
+                    localStorage.setItem('userName', data.userName);
+                    
+                    // --- LÓGICA DE REDIRECIONAMENTO ADICIONADA ---
+                    if (data.userType === 'dono') {
+                        // Se for dono, vai para o dashboard
+                        window.location.href = '/dashboard-dono.html';
+                    } else {
+                        // Se for cliente, vai para a página inicial
+                        window.location.href = '/home.html';
+                    }
+                } else {
+                    errorMessage.textContent = data.message;
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Não foi possível conectar ao servidor. Tente novamente.';
+            }
+        });
+    </script>
+</body>
+</html>

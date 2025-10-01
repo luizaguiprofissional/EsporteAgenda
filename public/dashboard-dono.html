@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Dono - EsporteAgenda</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 40px 0; background: white; position: relative; overflow-y: auto; }
+        .background-shape { position: absolute; background: #00ff6a; filter: blur(10px); opacity: 0.8; z-index: -1; border-radius: 30px; }
+        .shape1 { width: 200px; height: 200px; top: -50px; left: -50px; border-radius: 50%; background: #2bbf2b; }
+        .shape2 { width: 300px; height: 250px; bottom: 50px; left: 30px; transform: rotate(20deg); }
+        .shape3 { width: 400px; height: 300px; top: 50px; right: -100px; transform: rotate(-15deg); }
+        .shape4 { width: 100%; height: 50px; background: #2bbf2b; position: absolute; bottom: 0; left: 0; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0px 5px 15px rgba(0,0,0,0.2); width: 90%; max-width: 700px; position: relative; z-index: 1; }
+        h1, h2 { color: #333; font-weight: 700; margin-bottom: 10px; text-align: center; }
+        .form-section, .list-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 15px; text-align: left; }
+        .form-group label { font-weight: bold; margin-bottom: 5px; }
+        .form-group input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        button { background: #ffcc00; border: none; border-radius: 6px; padding: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; font-size: 16px; margin-top: 10px; }
+        button:hover { background: #ff9900; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f0f0f0; color: #333; }
+        .links { margin-top: 25px; display: flex; justify-content: space-between; }
+        .links a { color: #007bff; font-weight: bold; text-decoration: none; }
+        #form-message { margin-top: 15px; font-weight: bold; text-align: center; }
+        .delete-btn { background-color: #e74c3c; color: white; padding: 5px 10px; font-size: 12px; width: auto; margin: 0; }
+        .delete-btn:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+    <div class="background-shape shape1"></div>
+    <div class="background-shape shape2"></div>
+    <div class="background-shape shape3"></div>
+    <div class="background-shape shape4"></div>
+
+    <div class="container">
+        <h1>Painel do Dono de Quadra</h1>
+
+        <div class="form-section">
+            <h2>Cadastrar Nova Quadra</h2>
+            <form id="form-nova-quadra">
+                <div class="form-group">
+                    <label>Nome da Quadra</label>
+                    <input type="text" id="quadra-nome" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Piso (Ex: Saibro, Cimento)</label>
+                    <input type="text" id="quadra-tipo" required>
+                </div>
+                <div class="form-group">
+                    <label>Imagem da Quadra</label>
+                    <input type="file" id="quadra-imagem" name="quadraImage" accept="image/*" required>
+                </div>
+                <button type="submit">Cadastrar Quadra</button>
+                <p id="form-message"></p>
+            </form>
+        </div>
+        
+        <div class="list-section">
+            <h2>Minhas Quadras Cadastradas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Tipo</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="minhas-quadras-container">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="links">
+            <a href="#" onclick="logout()">← Sair (Logout)</a>
+            <a href="historico-reservas.html">Ver Histórico de Reservas →</a>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const quadrasContainer = document.getElementById('minhas-quadras-container');
+            const form = document.getElementById('form-nova-quadra');
+            const messageEl = document.getElementById('form-message');
+
+            async function carregarMinhasQuadras() {
+                const headers = { 'Authorization': `Bearer ${token}` };
+                const response = await fetch('/api/minhas-quadras', { headers });
+                const data = await response.json();
+                
+                quadrasContainer.innerHTML = '';
+                if (data.quadras && data.quadras.length > 0) {
+                     data.quadras.forEach(q => {
+                        const tr = `
+                            <tr>
+                                <td>${q.nome}</td>
+                                <td>${q.tipo}</td>
+                                <td><button class="delete-btn" data-id="${q.id}">Apagar</button></td>
+                            </tr>
+                        `;
+                        quadrasContainer.innerHTML += tr;
+                    });
+                } else {
+                    quadrasContainer.innerHTML = '<tr><td colspan="3" style="text-align:center;">Você ainda não cadastrou nenhuma quadra.</td></tr>';
+                }
+            }
+            
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                messageEl.textContent = 'Cadastrando...';
+                
+                const formData = new FormData();
+                formData.append('nome', document.getElementById('quadra-nome').value);
+                formData.append('tipo', document.getElementById('quadra-tipo').value);
+                const imagemInput = document.getElementById('quadra-imagem');
+                if (imagemInput.files.length > 0) {
+                    formData.append('quadraImage', imagemInput.files[0]);
+                }
+
+                try {
+                    const response = await fetch('/api/quadras', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    if (response.ok) {
+                        messageEl.textContent = 'Quadra cadastrada com sucesso!';
+                        messageEl.style.color = 'green';
+                        form.reset();
+                        carregarMinhasQuadras();
+                    } else {
+                        messageEl.textContent = `Erro: ${data.message}`;
+                        messageEl.style.color = 'red';
+                    }
+                } catch(error) {
+                    messageEl.textContent = 'Ocorreu um erro na requisição.';
+                    messageEl.style.color = 'red';
+                }
+            });
+
+            quadrasContainer.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const quadraId = e.target.getAttribute('data-id');
+                    if (confirm('Tem certeza que deseja apagar esta quadra? Todas as reservas associadas também serão apagadas.')) {
+                        try {
+                            const headers = { 'Authorization': `Bearer ${token}` };
+                            const response = await fetch(`/api/quadras/${quadraId}`, { method: 'DELETE', headers });
+                            const result = await response.json();
+                            alert(result.message);
+                            if (response.ok) carregarMinhasQuadras();
+                        } catch (error) {
+                            alert('Ocorreu um erro ao tentar apagar a quadra.');
+                        }
+                    }
+                }
+            });
+
+            carregarMinhasQuadras();
+        });
+
+        function logout() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userName');
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>

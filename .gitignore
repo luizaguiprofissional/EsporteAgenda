@@ -1,0 +1,9 @@
+# Arquivos de dependências do Node.js (essencial ignorar)
+node_modules/
+
+# Arquivo de variáveis de ambiente (contém senhas, NUNCA envie!)
+.env
+
+# Arquivos de banco de dados do SQLite
+database/*.db
+database/*.db-journal

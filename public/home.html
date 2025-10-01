@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&display=swap" rel="stylesheet">
+    <title>EsporteAgenda - Onde o esporte começa!</title>
+
+    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/owl-carousel.css">
+    <link rel="stylesheet" href="assets/css/tooplate-artxibition.css">
+</head>
+
+<body>
+    <div id="js-preloader" class="js-preloader">
+        <div class="preloader-inner">
+            <span class="dot"></span>
+            <div class="dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+    <header class="header-area header-sticky">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <nav class="main-nav">
+                        <a href="home.html" class="logo">Esporte<em>Agenda</em></a>
+                        <ul class="nav">
+                            <li><a href="home.html" class="active">Início</a></li>
+                            <li><a href="index.html">Alugue uma quadra</a></li>
+                            <li><div id="user-nav-placeholder"></div></li>
+                        </ul>
+                        <a class='menu-trigger'>
+                            <span>Menu</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="page-heading-about">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h2 id="destaque-titulo">EM DESTAQUE</h2>
+                    <span id="destaque-subtitulo">Carregando...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="about-item">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="left-image">
+                        <img id="destaque-imagem" src="assets/images/placeholder.jpg" alt="Quadra em destaque">
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="right-content">
+                        <div class="down-content">
+                            <h4 id="destaque-nome-quadra">Carregando...</h4>
+                            <div class="main-dark-button">
+                                <a id="destaque-link" href="index.html">Agendar Agora</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="about-upcoming-shows">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="next-shows">
+                        <h4><i class="fa fa-clock-o"></i> Conheça outros lugares perto de você</h4>
+                        <ul id="outras-quadras-lista">
+                            <li>
+                                <h5>Carregando quadras...</h5>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="sub-footer">
+                        <div class="row">
+                            <div class="col-lg-3">
+                                <div class="logo"><span>Esporte<em>Agenda</em></span></div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="copyright">
+                                    <p>Copyright © 2025 EsporteAgenda Inc.</p>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="social-links">
+                                    <ul>
+                                        <li><a href="#"><i class="fa fa-twitter"></i></a></li>
+                                        <li><a href="#"><i class="fa fa-facebook"></i></a></li>
+                                        <li><a href="#"><i class="fa fa-instagram"></i></a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/jquery-2.1.0.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/owl-carousel.js"></script>
+    <script src="assets/js/scrollreveal.min.js"></script>
+    <script src="assets/js/custom.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userNav = document.getElementById('user-nav-placeholder');
+
+            // 1. VERIFICA O STATUS DE LOGIN E ATUALIZA O MENU
+            const token = localStorage.getItem('accessToken');
+            const userName = localStorage.getItem('userName');
+
+            if (token && userName) {
+                userNav.innerHTML = `
+                    <a href="#">Olá, ${userName}!</a>
+                    <a href="#" onclick="logout()">Sair</a>
+                `;
+            } else {
+                userNav.innerHTML = '<a href="login.html">Login / Registrar</a>';
+            }
+
+            // 2. BUSCA AS QUADRAS DA NOSSA API E PREENCHE A PÁGINA
+            try {
+                const response = await fetch('/api/quadras');
+                const data = await response.json();
+                const quadras = data.quadras;
+
+                if (quadras && quadras.length > 0) {
+                    // Pega a primeira quadra para o destaque
+                    const destaque = quadras[0];
+                    document.getElementById('destaque-titulo').textContent = destaque.nome;
+                    document.getElementById('destaque-subtitulo').textContent = destaque.tipo;
+                    document.getElementById('destaque-imagem').src = "assets/images/" + destaque.imagem_url.split('/').pop(); // Adapta o caminho da imagem
+                    document.getElementById('destaque-nome-quadra').textContent = destaque.nome;
+                    document.getElementById('destaque-link').href = `index.html?quadra=${destaque.id}`;
+
+                    // Pega o restante das quadras para a lista
+                    const outrasQuadras = quadras.slice(1);
+                    const listaElement = document.getElementById('outras-quadras-lista');
+                    listaElement.innerHTML = ''; // Limpa a mensagem "Carregando..."
+
+                    outrasQuadras.forEach(quadra => {
+                        const listItem = `
+                            <li>
+                                <h5>${quadra.nome}</h5>
+                                <span>${quadra.tipo}</span>
+                                <div class="icon-button">
+                                    <a href="index.html?quadra=${quadra.id}">
+                                        <i class="fa fa-shopping-cart"></i>
+                                    </a>
+                                </div>
+                            </li>
+                        `;
+                        listaElement.innerHTML += listItem;
+                    });
+                }
+            } catch (error) {
+                console.error("Erro ao carregar as quadras:", error);
+                document.getElementById('destaque-titulo').textContent = "Erro ao carregar quadras";
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userName');
+            window.location.href = '/home.html';
+        }
+    </script>
+</body>
+</html>

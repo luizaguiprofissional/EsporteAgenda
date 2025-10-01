@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://fonts.googleapis.com/css?family=Poppins:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&display=swap" rel="stylesheet">
+    <title>Agendar Quadra - EsporteAgenda</title>
+
+    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css">
+    <link rel="stylesheet" type="text/css" href="assets/css/owl-carousel.css">
+    <link rel="stylesheet" href="assets/css/tooplate-artxibition.css">
+
+    <link rel="stylesheet" href="assets/css/booking-style.css">
+</head>
+
+<body>
+    <div id="js-preloader" class="js-preloader">
+        <div class="preloader-inner">
+            <span class="dot"></span>
+            <div class="dots"><span></span><span></span><span></span></div>
+        </div>
+    </div>
+    <header class="header-area header-sticky">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <nav class="main-nav">
+                        <a href="home.html" class="logo">Esporte<em>Agenda</em></a>
+                        <ul class="nav">
+                            <li><a href="home.html">Início</a></li>
+                            <li><a href="index.html" class="active">Alugue uma quadra</a></li>
+                            <li><div id="user-nav-placeholder"></div></li>
+                        </ul>
+                        <a class='menu-trigger'><span>Menu</span></a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="page-heading-about">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <h2>Agendar uma Quadra</h2>
+                    <span>Siga os passos abaixo para garantir seu horário.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="booking-container">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-10 offset-lg-1">
+                    
+                    <div id="selecao-quadra" class="booking-step">
+                        <h2>1. Escolha a Quadra e a Data</h2>
+                        
+                        <div class="form-group">
+                            <label>Quadra:</label>
+                            <div id="quadras-list-container">
+                                </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="data-input">Data:</label>
+                            <input type="date" id="data-input">
+                        </div>
+                        <div class="main-button">
+                            <button id="ver-horarios-btn">Ver Horários Disponíveis</button>
+                        </div>
+                    </div>
+
+                    <div id="horarios-disponiveis" class="booking-step hidden">
+                        <h2>2. Horários Disponíveis</h2>
+                        <div id="horarios-container">
+                            </div>
+                    </div>
+
+                    <div id="formulario-reserva" class="booking-step hidden">
+                        <h2>3. Complete sua Reserva</h2>
+                        <form id="reserva-form">
+                            <p>Você está reservando a quadra <strong id="quadra-selecionada-nome"></strong> para o dia <strong id="data-selecionada"></strong> às <strong id="horario-selecionado"></strong>.</p>
+                            <div class="main-button">
+                                <button type="submit">Confirmar Reserva</button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+       </footer>
+
+    <script src="assets/js/jquery-2.1.0.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/owl-carousel.js"></script>
+    <script src="assets/js/scrollreveal.min.js"></script>
+    <script src="assets/js/custom.js"></script>
+
+    <script src="js/script.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userNav = document.getElementById('user-nav-placeholder');
+            const token = localStorage.getItem('accessToken');
+            const userName = localStorage.getItem('userName');
+
+            if (token && userName) {
+                userNav.innerHTML = `<a href="#">Olá, ${userName}!</a><a href="#" onclick="logout()">Sair</a>`;
+            } else {
+                userNav.innerHTML = '<a href="login.html">Login / Registrar</a>';
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('userName');
+            window.location.href = '/home.html';
+        }
+    </script>
+</body>
+</html>
