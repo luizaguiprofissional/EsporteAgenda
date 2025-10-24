@@ -6,33 +6,53 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Elementos do DOM atualizados
+    // --- Elementos do DOM ---
     const quadrasContainer = document.getElementById('quadras-list-container');
-    const dataInput = document.getElementById('data-input');
+    const dataInput = document.getElementById('data-input'); // Agora controlado pelo Flatpickr
     const verHorariosBtn = document.getElementById('ver-horarios-btn');
     const horariosContainer = document.getElementById('horarios-container');
     const horariosSection = document.getElementById('horarios-disponiveis');
-    const reservaFormSection = document.getElementById('formulario-reserva');
-    const reservaForm = document.getElementById('reserva-form');
+    const revisaoSection = document.getElementById('revisao-reserva');
+    const listaSelecionados = document.getElementById('horarios-selecionados-lista');
+    const confirmarBtn = document.getElementById('confirmar-reservas-btn');
+    const statusReserva = document.getElementById('reserva-status');
 
-    let dataSelecionada = null;
-    let horarioSelecionado = null;
+    let datasSelecionadas = []; // Guarda as datas (AAAA-MM-DD)
+    let horariosComunsSelecionados = []; // Guarda apenas os horários (HH:MM) comuns escolhidos
+    let quadraInfoSelecionada = null; // Guarda { id, nome } da quadra
 
-    // --- 1. FUNÇÃO carregarQuadras (TOTALMENTE REESCRITA) ---
-    // Agora cria os cartões visuais das quadras
+    // --- 1. Inicializar o Flatpickr ---
+    const fp = flatpickr(dataInput, {
+        mode: "multiple", // Permite selecionar múltiplas datas
+        dateFormat: "Y-m-d", // Formato que o backend espera
+        minDate: "today", // Não permite selecionar datas passadas
+        locale: "pt", // Usa a tradução
+        onChange: function(selectedDates) {
+            // Guarda as datas selecionadas formatadas
+            datasSelecionadas = selectedDates.map(date => date.toISOString().split('T')[0]);
+            // Limpa horários e seleção se as datas mudarem
+            horariosSection.classList.add('hidden');
+            horariosComunsSelecionados = [];
+            // Desmarca botões de horário visualmente
+             document.querySelectorAll('.horario-btn.selecionado').forEach(btn => btn.classList.remove('selecionado'));
+            atualizarListaSelecionados();
+        }
+    });
+
+    // --- 2. Função carregarQuadras ---
     async function carregarQuadras() {
         try {
             const response = await fetch('/api/quadras');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            
-            quadrasContainer.innerHTML = ''; // Limpa o container
+
+            quadrasContainer.innerHTML = '';
             data.quadras.forEach(quadra => {
-                // Cria o HTML para cada cartão de quadra
+                const imagemSrc = quadra.imagem_url && quadra.imagem_url.startsWith('/') ? quadra.imagem_url : `/uploads/${quadra.imagem_url}`; // Ajuste para uploads
                 const courtItemHTML = `
                     <label class="court-item" for="quadra-${quadra.id}">
                         <input type="radio" name="quadra-radio" id="quadra-${quadra.id}" value="${quadra.id}" class="court-radio">
-                        <img src="${quadra.imagem_url}" alt="${quadra.nome}">
-                        <div class="court-item-info">
+                        <img src="${imagemSrc}" alt="${quadra.nome}" onerror="this.src='/assets/images/placeholder.jpg';"> <div class="court-item-info">
                             <h3 class="court-name">${quadra.nome}</h3>
                             <p>${quadra.tipo}</p>
                         </div>
@@ -40,132 +60,220 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 quadrasContainer.innerHTML += courtItemHTML;
             });
-            
-            // Adiciona o evento de clique para o feedback visual (classe 'selected')
+
             document.querySelectorAll('.court-item').forEach(item => {
                 item.addEventListener('click', () => {
                     document.querySelectorAll('.court-item').forEach(i => i.classList.remove('selected'));
                     item.classList.add('selected');
+                    const radio = item.querySelector('.court-radio');
+                    quadraInfoSelecionada = {
+                        id: radio.value,
+                        nome: item.querySelector('.court-name').textContent
+                    };
+                    horariosSection.classList.add('hidden');
+                    horariosComunsSelecionados = [];
+                     document.querySelectorAll('.horario-btn.selecionado').forEach(btn => btn.classList.remove('selecionado'));
+                    atualizarListaSelecionados();
+                    fp.clear(); // Limpa as datas ao trocar de quadra
+                    datasSelecionadas = [];
                 });
             });
 
-            // Seleciona a quadra vinda da URL (ex: ?quadra=2), se houver
             const urlParams = new URLSearchParams(window.location.search);
             const quadraIdFromUrl = urlParams.get('quadra');
             if (quadraIdFromUrl) {
                 const radioToSelect = document.getElementById(`quadra-${quadraIdFromUrl}`);
                 if (radioToSelect) {
                     radioToSelect.checked = true;
-                    radioToSelect.closest('.court-item').classList.add('selected');
+                    // Simular clique para garantir estado correto
+                    radioToSelect.closest('.court-item').click();
                 }
             }
 
         } catch (error) {
             console.error('Erro ao carregar quadras:', error);
-            quadrasContainer.innerHTML = '<p>Não foi possível carregar as quadras.</p>';
+            quadrasContainer.innerHTML = '<p style="color:red;">Não foi possível carregar as quadras. Verifique a conexão.</p>';
         }
     }
-    
-    // --- 2. FUNÇÃO buscarHorarios (MODIFICADA) ---
-    // Agora busca o ID da quadra no rádio selecionado
-    async function buscarHorarios() {
-        const quadraSelecionadaRadio = document.querySelector('input[name="quadra-radio"]:checked');
-        dataSelecionada = dataInput.value;
 
-        if (!quadraSelecionadaRadio || !dataSelecionada) {
-            alert('Por favor, selecione uma quadra e uma data.');
+    // --- 3. Função buscarHorariosComuns ---
+    async function buscarHorariosComuns() {
+        if (!quadraInfoSelecionada || datasSelecionadas.length === 0) {
+            alert('Por favor, selecione uma quadra e pelo menos uma data.');
             return;
         }
-        
-        const quadraIdSelecionada = quadraSelecionadaRadio.value;
+
+        horariosComunsSelecionados = [];
+        atualizarListaSelecionados();
+        horariosContainer.innerHTML = '<p>Buscando horários comuns...</p>';
+        horariosSection.classList.remove('hidden');
 
         try {
-            const response = await fetch(`/api/horarios/${quadraIdSelecionada}/${dataSelecionada}`);
+            const response = await fetch('/api/horarios-multi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Garante que está enviando o token
+                },
+                body: JSON.stringify({ quadraId: quadraInfoSelecionada.id, dates: datasSelecionadas })
+            });
+
+            if (!response.ok) {
+                 const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido ao buscar horários.' }));
+                 throw new Error(errorData.message || `Falha ao buscar horários (${response.status})`);
+            }
+
             const data = await response.json();
-            
             horariosContainer.innerHTML = '';
-            if (data.horarios.length === 0) {
-                horariosContainer.innerHTML = '<p>Nenhum horário disponível para esta data.</p>';
+
+            if (data.horariosComuns.length === 0) {
+                horariosContainer.innerHTML = '<p>Nenhum horário comum disponível para TODAS as datas selecionadas.</p>';
             } else {
-                data.horarios.forEach(horario => {
+                data.horariosComuns.forEach(horario => {
                     const btn = document.createElement('button');
                     btn.textContent = horario;
                     btn.classList.add('horario-btn');
-                    btn.onclick = () => selecionarHorario(horario);
+                    btn.dataset.horario = horario;
+                    btn.onclick = () => toggleSelecaoHorarioComum(btn);
                     horariosContainer.appendChild(btn);
                 });
             }
-            horariosSection.classList.remove('hidden');
-            reservaFormSection.classList.add('hidden');
         } catch (error) {
-            console.error('Erro ao buscar horários:', error);
+            console.error('Erro ao buscar horários comuns:', error);
+            horariosContainer.innerHTML = `<p style="color:red;">Erro ao buscar horários: ${error.message}. Tente novamente.</p>`;
         }
     }
 
-    // --- 3. FUNÇÃO selecionarHorario (MODIFICADA) ---
-    // Agora busca o nome da quadra no cartão selecionado
-    function selecionarHorario(horario) {
-        horarioSelecionado = horario;
-        const quadraSelecionadaCard = document.querySelector('.court-item.selected');
-        const nomeDaQuadra = quadraSelecionadaCard.querySelector('.court-name').textContent;
+    // --- 4. Função toggleSelecaoHorarioComum ---
+    function toggleSelecaoHorarioComum(botaoClicado) {
+        const horario = botaoClicado.dataset.horario;
+        const index = horariosComunsSelecionados.indexOf(horario);
 
-        document.getElementById('quadra-selecionada-nome').textContent = nomeDaQuadra;
-        document.getElementById('data-selecionada').textContent = new Date(dataSelecionada + 'T00:00:00').toLocaleDateString('pt-BR');
-        document.getElementById('horario-selecionado').textContent = horario;
-
-        reservaFormSection.classList.remove('hidden');
-        window.scrollTo(0, document.body.scrollHeight);
+        if (index > -1) {
+            horariosComunsSelecionados.splice(index, 1);
+            botaoClicado.classList.remove('selecionado');
+        } else {
+            horariosComunsSelecionados.push(horario);
+            botaoClicado.classList.add('selecionado');
+        }
+        atualizarListaSelecionados();
     }
-    
-    // --- FUNÇÃO submeterReserva (MODIFICADA) ---
-    // Garante que o ID da quadra seja pego da forma correta
-    async function submeterReserva(event) {
-        event.preventDefault();
-        
-        const quadraSelecionadaRadio = document.querySelector('input[name="quadra-radio"]:checked');
-        if (!quadraSelecionadaRadio) {
-            alert("Erro: Nenhuma quadra selecionada.");
+
+    // --- 5. Função atualizarListaSelecionados ---
+    function atualizarListaSelecionados() {
+        listaSelecionados.innerHTML = '';
+        if (horariosComunsSelecionados.length === 0 || datasSelecionadas.length === 0 || !quadraInfoSelecionada) {
+            listaSelecionados.innerHTML = '<li>Nenhum horário selecionado.</li>';
+            revisaoSection.classList.add('hidden');
+        } else {
+            const datasOrdenadas = [...datasSelecionadas].sort((a, b) => new Date(a) - new Date(b));
+            const horariosOrdenados = [...horariosComunsSelecionados].sort();
+
+            datasOrdenadas.forEach(data => {
+                const dataFormatada = new Date(data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+                let horariosHtml = horariosOrdenados.map(h => `<strong>${h}</strong>`).join(', ');
+
+                listaSelecionados.innerHTML += `
+                    <li style="border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                        <strong>${quadraInfoSelecionada.nome}</strong> - ${dataFormatada} <br>
+                        <span style="font-size: 0.9em; color: #555;">Horários: ${horariosHtml}</span>
+                    </li>`;
+            });
+            revisaoSection.classList.remove('hidden');
+        }
+        statusReserva.textContent = ''; // Limpa status anterior
+    }
+
+    // --- 6. Função enviarReservas ---
+    async function enviarReservas() {
+        if (horariosComunsSelecionados.length === 0 || datasSelecionadas.length === 0 || !quadraInfoSelecionada) {
+            alert("Nenhuma combinação de data/horário selecionada ou quadra não definida.");
             return;
         }
-        
-        const reserva = {
-            quadra_id: quadraSelecionadaRadio.value,
-            data: dataSelecionada,
-            horario: horarioSelecionado
-        };
+
+        const dadosParaEnviar = [];
+        datasSelecionadas.forEach(data => {
+            horariosComunsSelecionados.forEach(horario => {
+                dadosParaEnviar.push({
+                    quadra_id: quadraInfoSelecionada.id,
+                    data: data,
+                    horario: horario
+                });
+            });
+        });
+
+        if (dadosParaEnviar.length === 0) {
+             alert("Erro ao montar a lista de reservas para envio.");
+             return;
+        }
+
+        statusReserva.textContent = 'Enviando reservas...';
+        statusReserva.style.color = '#333';
+        confirmarBtn.disabled = true;
 
         try {
-            const token = localStorage.getItem('accessToken');
             const response = await fetch('/api/reservas', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(reserva)
+                body: JSON.stringify({ reservas: dadosParaEnviar })
             });
 
+            const result = await response.json(); // Tenta ler JSON mesmo em erro
+
             if (response.ok) {
-                alert('Reserva realizada com sucesso!');
-                window.location.href = '/home.html';
-            } else if (response.status === 401 || response.status === 403) {
-                alert('Sua sessão expirou. Por favor, faça login novamente.');
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('userName');
-                window.location.href = '/login.html';
+                 statusReserva.textContent = 'Reservas realizadas com sucesso!';
+                 statusReserva.style.color = 'green';
+                 alert('Reservas realizadas com sucesso!');
+                 // Limpa seleções após sucesso
+                 horariosComunsSelecionados = [];
+                 fp.clear();
+                 datasSelecionadas = [];
+                 horariosSection.classList.add('hidden');
+                 revisaoSection.classList.add('hidden');
+                 document.querySelectorAll('.horario-btn.selecionado').forEach(btn => btn.classList.remove('selecionado'));
+
             } else {
-                const errorData = await response.json();
-                alert(`Erro ao reservar: ${errorData.error || errorData.message}`);
+                 let errorMsg = result.message || `Falha na requisição (${response.status})`;
+                 if(result.details) {
+                     const falhas = result.details.filter(d => !d.success);
+                     if (falhas.length > 0) {
+                          // Formata detalhes do erro de forma mais clara
+                         errorMsg += " Detalhes: " + falhas.map(f => `${new Date(f.data+'T00:00:00').toLocaleDateString('pt-BR')} ${f.horario} (${f.message})`).join('; ');
+                     }
+                 }
+                 statusReserva.textContent = `Erro: ${errorMsg}`;
+                 statusReserva.style.color = 'red';
+                 alert(`Erro ao reservar: ${errorMsg}`);
+                 // Ação pós-erro: Recarrega horários comuns e limpa seleção atual
+                 buscarHorariosComuns(); // Atualiza a lista de disponíveis
+                 horariosComunsSelecionados = []; // Limpa os horários que o usuário tinha clicado
+                 document.querySelectorAll('.horario-btn.selecionado').forEach(btn => btn.classList.remove('selecionado')); // Desmarca visualmente
+                 atualizarListaSelecionados(); // Atualiza a seção de revisão (que ficará vazia)
             }
         } catch (error) {
-            console.error('Erro ao submeter reserva:', error);
+            statusReserva.textContent = 'Erro de conexão ao enviar reservas.';
+            statusReserva.style.color = 'red';
+            console.error('Erro de rede ou JSON inválido:', error);
+            alert('Erro de conexão. Verifique sua internet e tente novamente.');
+        } finally {
+             confirmarBtn.disabled = false; // Reabilita o botão
         }
     }
 
-    // Adiciona os listeners de eventos
-    verHorariosBtn.addEventListener('click', buscarHorarios);
-    reservaForm.addEventListener('submit', submeterReserva);
-    
-    // Inicia o carregamento das quadras
+    // --- Adiciona os listeners de eventos ---
+    verHorariosBtn.addEventListener('click', buscarHorariosComuns);
+    confirmarBtn.addEventListener('click', enviarReservas);
+
+    // --- Inicia o carregamento das quadras ---
     carregarQuadras();
 });
+
+// --- Função logout (Manter) ---
+function logout() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('userName');
+    window.location.href = '/login.html';
+}

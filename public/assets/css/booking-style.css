@@ -48,7 +48,7 @@
 .main-button a,
 .main-button button {
     display: inline-block;
-    background-color: #f5a623;
+    background-color: #f5a623; /* Laranja */
     color: #fff;
     font-size: 15px;
     font-weight: 600;
@@ -62,7 +62,7 @@
 
 .main-button a:hover,
 .main-button button:hover {
-    background-color: #c4851c;
+    background-color: #c4851c; /* Laranja mais escuro */
 }
 
 /* Esconder seções */
@@ -74,14 +74,14 @@
 #horarios-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 15px; /* Espaçamento entre botões */
 }
 
 .horario-btn {
-    background-color: #2a2a2a;
+    background-color: #2a2a2a; /* Cinza escuro */
     color: #fff;
     padding: 10px 20px;
-    border: none;
+    border: 2px solid transparent; /* Adiciona borda transparente para manter tamanho */
     border-radius: 5px;
     cursor: pointer;
     font-size: 15px;
@@ -90,20 +90,44 @@
 }
 
 .horario-btn:hover {
-    background-color: #f5a623;
+    background-color: #555; /* Cinza um pouco mais claro no hover */
+    border-color: #f5a623;
 }
 
-/* Estilos para a seção de confirmação */
-#formulario-reserva p {
-    font-size: 18px;
-    line-height: 1.8;
+/* --- ESTILO ADICIONADO PARA HORÁRIO SELECIONADO --- */
+.horario-btn.selecionado {
+    background-color: #28a745; /* Verde */
+    color: white;
+    border-color: #218838; /* Verde mais escuro na borda */
+}
+
+/* Estilos para a seção de confirmação (agora revisão) */
+#revisao-reserva ul {
+    list-style-type: none;
+    padding-left: 0;
     margin-bottom: 30px;
 }
-#formulario-reserva strong {
-    color: #f5a623;
+#revisao-reserva li {
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+#revisao-reserva li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+#revisao-reserva strong {
+    color: #333; /* Cor mais escura para destaque */
+}
+#reserva-status {
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 600;
 }
 
-/* --- NOVOS ESTILOS PARA LISTA DE QUADRAS --- */
+
+/* --- ESTILOS PARA LISTA DE QUADRAS --- */
 
 #quadras-list-container {
     display: flex;
@@ -123,12 +147,12 @@
 }
 
 .court-item:hover {
-    border-color: #f5a623;
+    border-color: #f5a623; /* Laranja no hover */
     background-color: #fffaf0;
 }
 
 .court-item.selected {
-    border-color: #2bbf2b;
+    border-color: #2bbf2b; /* Verde quando selecionado */
     background-color: #f0fff0;
     box-shadow: 0 0 10px rgba(43, 191, 43, 0.2);
 }
