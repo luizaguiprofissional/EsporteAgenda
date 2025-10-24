@@ -184,3 +184,13 @@
 .court-item input[type="radio"] {
     display: none; /* O rádio ficará invisível, o card todo será clicável */
 }
+
+/* --- Modificação da cor do título da página de agendamento --- */
+/* ADICIONADO AQUI */
+.page-heading-about h2 {
+    color: #000000; /* Preto */
+}
+
+.page-heading-about span {
+    color: #000000; /* Preto */
+}

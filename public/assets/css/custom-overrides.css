@@ -1,0 +1,19 @@
+/* Arquivo para guardar customizações e sobrescritas do template */
+
+/* --- Modificação da cor do título da página inicial (home.html) --- */
+.page-heading-about h2#destaque-titulo {
+    color: black !important; /* Força a cor preta sobre o estilo do template */
+}
+
+.page-heading-about span#destaque-subtitulo {
+    color: black !important; /* Força a cor preta sobre o estilo do template */
+}
+
+/* --- Modificação da cor do título da página Principais Eventos --- */
+.page-heading-shows-events h2 {
+    color: black !important; /* Força a cor preta */
+}
+
+.page-heading-shows-events span {
+    color: black !important; /* Força a cor preta */
+}

@@ -11,6 +11,9 @@
     <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css">
     <link rel="stylesheet" type="text/css" href="assets/css/owl-carousel.css">
     <link rel="stylesheet" href="assets/css/tooplate-artxibition.css">
+
+    <link rel="stylesheet" href="assets/css/custom-overrides.css">
+
 </head>
 
 <body>
@@ -33,6 +36,7 @@
                         <ul class="nav">
                             <li><a href="home.html" class="active">Início</a></li>
                             <li><a href="index.html">Alugue uma quadra</a></li>
+                            <li><a href="principais-eventos.html">Quadras Anunciadas</a></li>
                             <li><div id="user-nav-placeholder"></div></li>
                         </ul>
                         <a class='menu-trigger'>
@@ -47,8 +51,8 @@
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
-                    <h2 id="destaque-titulo">EM DESTAQUE</h2>
-                    <span id="destaque-subtitulo">Carregando...</span>
+                    <h2 id="destaque-titulo">Bem-Vindo</h2>
+                    <span id="destaque-subtitulo">ao EsporteAgenda</span>
                 </div>
             </div>
         </div>
@@ -81,7 +85,7 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="next-shows">
-                        <h4><i class="fa fa-clock-o"></i> Conheça outros lugares perto de você</h4>
+                        <h4><i class="fa fa-futbol-o"></i> Conheça outros lugares perto de você</h4>
                         <ul id="outras-quadras-lista">
                             <li>
                                 <h5>Carregando quadras...</h5>
@@ -94,18 +98,16 @@
     </div>
 
     <footer>
-        <div class="container">
+         <div class="container">
             <div class="row">
-                <div class="col-lg-12">
+                 <div class="col-lg-12">
                     <div class="sub-footer">
                         <div class="row">
                             <div class="col-lg-3">
                                 <div class="logo"><span>Esporte<em>Agenda</em></span></div>
                             </div>
                             <div class="col-lg-6">
-                                <div class="copyright">
-                                    <p>Copyright © 2025 EsporteAgenda Inc.</p>
-                                </div>
+                                <div class="copyright"><p>Copyright © 2025 EsporteAgenda Inc.</p></div>
                             </div>
                             <div class="col-lg-3">
                                 <div class="social-links">
@@ -133,64 +135,83 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const userNav = document.getElementById('user-nav-placeholder');
 
-            // 1. VERIFICA O STATUS DE LOGIN E ATUALIZA O MENU
+            // 1. Gerencia Login/Logout
             const token = localStorage.getItem('accessToken');
             const userName = localStorage.getItem('userName');
-
             if (token && userName) {
-                userNav.innerHTML = `
-                    <a href="#">Olá, ${userName}!</a>
-                    <a href="#" onclick="logout()">Sair</a>
-                `;
+                userNav.innerHTML = `<a href="#">Olá, ${userName}!</a><a href="#" onclick="logout()">Sair</a>`;
             } else {
                 userNav.innerHTML = '<a href="login.html">Login / Registrar</a>';
             }
 
-            // 2. BUSCA AS QUADRAS DA NOSSA API E PREENCHE A PÁGINA
+            // 2. Busca e exibe as quadras
             try {
                 const response = await fetch('/api/quadras');
+                if (!response.ok) throw new Error('Falha ao buscar quadras');
                 const data = await response.json();
                 const quadras = data.quadras;
 
+                // Define o título e subtítulo fixos (já estão no HTML, mas garantimos aqui)
+                document.getElementById('destaque-titulo').textContent = 'Bem-Vindo';
+                document.getElementById('destaque-subtitulo').textContent = 'ao EsporteAgenda';
+
                 if (quadras && quadras.length > 0) {
-                    // Pega a primeira quadra para o destaque
+                    // Pega a primeira quadra APENAS para a seção de destaque principal
                     const destaque = quadras[0];
-                    document.getElementById('destaque-titulo').textContent = destaque.nome;
-                    document.getElementById('destaque-subtitulo').textContent = destaque.tipo;
-                    document.getElementById('destaque-imagem').src = "assets/images/" + destaque.imagem_url.split('/').pop(); // Adapta o caminho da imagem
+                    const imagemSrc = destaque.imagem_url.includes('/uploads/')
+                        ? destaque.imagem_url
+                        : (destaque.imagem_url.startsWith('/') ? destaque.imagem_url : '/assets/images/' + destaque.imagem_url.split('/').pop());
+
+                    document.getElementById('destaque-imagem').src = imagemSrc;
+                     document.getElementById('destaque-imagem').onerror = function() { this.src='/assets/images/placeholder.jpg'; }; // Fallback
                     document.getElementById('destaque-nome-quadra').textContent = destaque.nome;
                     document.getElementById('destaque-link').href = `index.html?quadra=${destaque.id}`;
 
-                    // Pega o restante das quadras para a lista
+                    // Pega o restante das quadras para a lista "Outros lugares"
                     const outrasQuadras = quadras.slice(1);
                     const listaElement = document.getElementById('outras-quadras-lista');
-                    listaElement.innerHTML = ''; // Limpa a mensagem "Carregando..."
+                    listaElement.innerHTML = '';
 
-                    outrasQuadras.forEach(quadra => {
-                        const listItem = `
-                            <li>
-                                <h5>${quadra.nome}</h5>
-                                <span>${quadra.tipo}</span>
-                                <div class="icon-button">
-                                    <a href="index.html?quadra=${quadra.id}">
-                                        <i class="fa fa-shopping-cart"></i>
-                                    </a>
-                                </div>
-                            </li>
-                        `;
-                        listaElement.innerHTML += listItem;
-                    });
+                    if (outrasQuadras.length === 0 && quadras.length === 1){
+                         listaElement.innerHTML = '<li>Nenhuma outra quadra encontrada no momento.</li>';
+                    } else if (outrasQuadras.length > 0) { // Garante que só itera se houver outras quadras
+                        outrasQuadras.forEach(quadra => {
+                            const listItem = `
+                                <li>
+                                    <h5>${quadra.nome}</h5>
+                                    <span>${quadra.tipo}</span>
+                                    <div class="icon-button">
+                                        <a href="index.html?quadra=${quadra.id}">
+                                            <i class="fa fa-calendar-check-o"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                            `;
+                            listaElement.innerHTML += listItem;
+                        });
+                    } else { // Caso não haja nenhuma quadra no total
+                         listaElement.innerHTML = '<li>Nenhuma quadra encontrada no momento.</li>';
+                    }
+                } else {
+                     document.getElementById('destaque-nome-quadra').textContent = 'Nenhuma quadra disponível';
+                     document.getElementById('destaque-imagem').src = '/assets/images/placeholder.jpg';
+                     document.getElementById('outras-quadras-lista').innerHTML = '<li>Nenhuma quadra encontrada no momento.</li>';
                 }
             } catch (error) {
                 console.error("Erro ao carregar as quadras:", error);
-                document.getElementById('destaque-titulo').textContent = "Erro ao carregar quadras";
+                 document.getElementById('destaque-titulo').textContent = "Erro";
+                 document.getElementById('destaque-subtitulo').textContent = "Não foi possível carregar as quadras";
+                 document.getElementById('destaque-nome-quadra').textContent = 'Erro ao carregar';
+                 document.getElementById('destaque-imagem').src = '/assets/images/placeholder.jpg';
+                 document.getElementById('outras-quadras-lista').innerHTML = '<li>Erro ao carregar quadras.</li>';
             }
         });
 
+        // Função Logout
         function logout() {
             localStorage.removeItem('accessToken');
             localStorage.removeItem('userName');
-            window.location.href = '/home.html';
+            window.location.href = '/login.html';
         }
     </script>
 </body>
