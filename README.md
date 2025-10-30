@@ -33,7 +33,7 @@ Os usuários podem visualizar horários disponíveis, reservar quadras e gerenci
 
 2. Clone o repositório:  
    ```bash
-   git clone https://github.com/SEUUSUARIO/PROJETOINTEGRADOR.git
+   git clone [https://github.com/luizaguiprofissional/EsporteAgenda]
    ```
 
 3. Inicie o servidor:  
