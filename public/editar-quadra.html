@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Editar Quadra - EsporteAgenda</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
+    body { font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f8ff; }
+    .container { text-align: center; background: white; padding: 30px; border-radius: 12px; box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); width: 420px; }
+    h2 { color: #333; font-weight: 700; margin-bottom: 10px; }
+    .input-group { display: flex; flex-direction: column; margin: 12px 0; text-align: left; }
+    .input-group label { font-weight: bold; margin-bottom: 5px; }
+    .input-group input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; font-family: 'Poppins', sans-serif; }
+    .button { background: #ffcc00; color: black; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.3s; }
+    .button:hover { background: #ff9900; }
+    #status-message { margin-top: 15px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Editar Informações da Quadra</h2>
+    <form id="form-editar-quadra">
+      <div class="input-group">
+        <label for="nome">Nome da Quadra</label>
+        <input type="text" id="nome" name="nome" required />
+      </div>
+      <div class="input-group">
+        <label for="endereco">Endereço</label>
+        <input type="text" id="endereco" name="endereco" required />
+      </div>
+      <div class="input-group">
+        <label for="horario_func">Horário de Funcionamento</label>
+        <input type="text" id="horario_func" name="horario_func" placeholder="Ex: 08:00 às 22:00" required />
+      </div>
+      <div class="input-group">
+        <label for="descricao">Descrição</label>
+        <textarea rows="3" id="descricao" name="descricao" required></textarea>
+      </div>
+      <button type="submit" class="button">Salvar Alterações</button>
+       <p id="status-message"></p>
+    </form>
+    <a href="dashboard-dono.html" style="display: block; margin-top: 15px; color: #555;">Voltar ao Painel</a>
+  </div>
+
+  <script>
+    const form = document.getElementById('form-editar-quadra');
+    const statusMessage = document.getElementById('status-message');
+    const token = localStorage.getItem('accessToken');
+    
+    // Pega o ID da quadra da URL (ex: editar-quadra.html?id=5)
+    const urlParams = new URLSearchParams(window.location.search);
+    const quadraId = urlParams.get('id');
+
+    // 1. Carrega os dados atuais da quadra no formulário
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!token) { window.location.href = '/login.html'; return; }
+        if (!quadraId) {
+            alert('Nenhuma quadra selecionada para edição.');
+            window.location.href = '/dashboard-dono.html';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/quadra-detalhes/${quadraId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                 if(response.status === 403) alert('Você não tem permissão para editar esta quadra.');
+                 throw new Error('Falha ao carregar dados da quadra.');
+            }
+            const quadra = await response.json();
+            
+            document.getElementById('nome').value = quadra.nome || '';
+            document.getElementById('endereco').value = quadra.endereco || '';
+            document.getElementById('horario_func').value = quadra.horario_func || '';
+            document.getElementById('descricao').value = quadra.descricao || '';
+        } catch (error) {
+            statusMessage.textContent = 'Erro: ' + error.message;
+            statusMessage.style.color = 'red';
+        }
+    });
+
+    // 2. Envia as atualizações
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        statusMessage.textContent = 'Salvando...';
+        statusMessage.style.color = 'blue';
+
+        const dados = {
+            nome: document.getElementById('nome').value,
+            endereco: document.getElementById('endereco').value,
+            horario_func: document.getElementById('horario_func').value,
+            descricao: document.getElementById('descricao').value
+        };
+
+        try {
+            const response = await fetch(`/api/quadra-detalhes/${quadraId}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(dados)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                statusMessage.textContent = 'Quadra atualizada com sucesso!';
+                statusMessage.style.color = 'green';
+                setTimeout(() => window.location.href = 'dashboard-dono.html', 1500);
+            } else {
+                throw new Error(result.message || 'Erro desconhecido.');
+            }
+        } catch (error) {
+            statusMessage.textContent = `Erro: ${error.message}`;
+            statusMessage.style.color = 'red';
+        }
+    });
+  </script>
+</body>
+</html>

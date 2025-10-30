@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+body {
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #e8fff1, #d0ffe0);
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+}
+
+
+.background-shape {
+  position: absolute;
+  background: #00ff6a;
+  filter: blur(8px);
+  opacity: 0.8;
+  z-index: -1;
+  border-radius: 30px;
+  animation: flutuar 10s infinite alternate ease-in-out;
+}
+
+.shape1 {
+  width: 250px;
+  height: 250px;
+  top: -60px;
+  left: -50px;
+  border-radius: 50%;
+  background: #2bbf2b;
+}
+
+.shape2 {
+  width: 350px;
+  height: 300px;
+  bottom: 80px;
+  left: 40px;
+  transform: rotate(20deg);
+  background: #3fd63f;
+}
+
+.shape3 {
+  width: 450px;
+  height: 350px;
+  top: 50px;
+  right: -120px;
+  transform: rotate(-15deg);
+  background: #40bf40;
+}
+
+.shape4 {
+  width: 100%;
+  height: 60px;
+  background: #2bbf2b;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+@keyframes flutuar {
+  from { transform: translateY(0); }
+  to { transform: translateY(15px); }
+}
+
+
+.container {
+  text-align: center;
+  background: white;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.15);
+  width: 400px;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+h2 {
+  color: #2b2b2b;
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+}
+
+.foto-perfil {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #2bbf2b;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.foto-perfil:hover {
+  transform: scale(1.05);
+}
+
+
+.info {
+  text-align: left;
+  margin: 12px 0;
+  font-size: 16px;
+  color: #333;
+  background: #f8fff9;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 4px solid #2bbf2b;
+  transition: background 0.3s ease;
+}
+
+.info:hover {
+  background: #e9ffe9;
+}
+
+.info strong {
+  color: #2bbf2b;
+}
+
+
+.button {
+  background: linear-gradient(90deg, #ffcc00, #ffb300);
+  color: #222;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  width: 100%;
+  margin-top: 25px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(255, 204, 0, 0.4);
+}
+
+.button:hover {
+  background: linear-gradient(90deg, #ffb300, #ff9900);
+  box-shadow: 0 6px 15px rgba(255, 204, 0, 0.6);
+  transform: scale(1.03);
+}

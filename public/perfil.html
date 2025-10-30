@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meu Perfil - EsporteAgenda</title>
+  <link rel="stylesheet" href="assets/css/perfil-style.css"> </head>
+<body>
+  <div class="background-shape shape1"></div>
+  <div class="background-shape shape2"></div>
+  <div class="background-shape shape3"></div>
+  <div class="background-shape shape4"></div>
+
+  <div class="container">
+    <h2>Meu Perfil</h2>
+    <img src="assets/images/placeholder.jpg" alt="Foto do Perfil" class="foto-perfil" id="foto-preview">
+    
+    <div class="info"><strong>Nome:</strong> <span id="perfil-nome">Carregando...</span></div>
+    <div class="info"><strong>Email:</strong> <span id="perfil-email">Carregando...</span></div>
+    <div class="info"><strong>Telefone:</strong> <span id="perfil-telefone">Carregando...</span></div>
+    
+    <button class="button" onclick="window.location.href='editar-perfil.html'">Editar Perfil</button>
+    <a href="home.html" style="display: block; margin-top: 15px; color: #555;">Voltar para Home</a>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            window.location.href = '/login.html'; // Redireciona se não estiver logado
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/meu-perfil', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!response.ok) {
+                 if(response.status === 401 || response.status === 403) window.location.href = '/login.html';
+                 throw new Error('Falha ao carregar perfil.');
+            }
+            
+            const user = await response.json();
+
+            document.getElementById('foto-preview').src = user.foto_perfil_url || 'assets/images/placeholder.jpg';
+            document.getElementById('perfil-nome').textContent = user.nome || 'Não informado';
+            document.getElementById('perfil-email').textContent = user.email || 'Não informado';
+            document.getElementById('perfil-telefone').textContent = user.telefone || 'Não informado';
+
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Não foi possível carregar seu perfil.');
+        }
+    });
+  </script>
+</body>
+</html>

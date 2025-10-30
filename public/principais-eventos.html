@@ -101,12 +101,10 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const userNav = document.getElementById('user-nav-placeholder');
             const quadrasContainer = document.getElementById('quadras-container');
-
-            // 1. Gerencia o estado de Login/Logout no Header
             const token = localStorage.getItem('accessToken');
             const userName = localStorage.getItem('userName');
             if (token && userName) {
-                userNav.innerHTML = `<a href="#">Olá, ${userName}!</a><a href="#" onclick="logout()">Sair</a>`;
+                userNav.innerHTML = `<a href="perfil.html">Meu Perfil</a><a href="#" onclick="logout()">Sair</a>`;
             } else {
                 userNav.innerHTML = '<a href="login.html">Login / Registrar</a>';
             }

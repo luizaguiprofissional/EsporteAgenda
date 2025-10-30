@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Editar Perfil - EsporteAgenda</title>
+  <link rel="stylesheet" href="assets/css/perfil-style.css"> <style>
+      /* Ajustes para formulário de edição */
+      .container { width: 450px; }
+      .input-group { text-align: left; margin: 15px 0; }
+      .input-group label { font-weight: 600; margin-bottom: 5px; display: block; color: #333; }
+      .input-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+      .foto-preview { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid #2bbf2b; }
+      #status-message { margin-top: 15px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="background-shape shape1"></div>
+  <div class="background-shape shape2"></div>
+  <div class="background-shape shape3"></div>
+  <div class="background-shape shape4"></div>
+
+  <div class="container">
+    <h2>Editar Perfil</h2>
+    <img id="preview" src="assets/images/placeholder.jpg" class="foto-preview" alt="Foto do perfil">
+    
+    <form id="form-editar-perfil">
+      <div class="input-group">
+        <label for="nome">Nome Completo</label>
+        <input type="text" id="nome" name="nome" required />
+      </div>
+      <div class="input-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required />
+      </div>
+      <div class="input-group">
+        <label for="telefone">Telefone</label>
+        <input type="tel" id="telefone" name="telefone" placeholder="(XX) XXXXX-XXXX" />
+      </div>
+      <div class="input-group">
+        <label for="foto">Mudar Foto de Perfil</label>
+        <input type="file" id="foto" name="fotoPerfil" accept="image/*" />
+      </div>
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+      <div class="input-group">
+        <label for="senha">Nova Senha</label>
+        <input type="password" id="senha" name="senha" placeholder="Deixe em branco para não alterar" />
+      </div>
+      
+      <button type="submit" class="button">Salvar Alterações</button>
+      <p id="status-message"></p>
+    </form>
+    <a href="perfil.html" style="display: block; margin-top: 15px; color: #555;">Cancelar</a>
+  </div>
+
+  <script>
+    const form = document.getElementById('form-editar-perfil');
+    const preview = document.getElementById('preview');
+    const statusMessage = document.getElementById('status-message');
+    const token = localStorage.getItem('accessToken');
+
+    // Pré-visualiza a imagem
+    document.getElementById('foto').addEventListener('change', (e) => {
+        if(e.target.files && e.target.files[0]) {
+            preview.src = URL.createObjectURL(e.target.files[0]);
+        }
+    });
+
+    // 1. Carrega os dados atuais do usuário no formulário
+    document.addEventListener('DOMContentLoaded', async () => {
+        if (!token) { window.location.href = '/login.html'; return; }
+        try {
+            const response = await fetch('/api/meu-perfil', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Falha ao carregar dados.');
+            const user = await response.json();
+            
+            document.getElementById('nome').value = user.nome || '';
+            document.getElementById('email').value = user.email || '';
+            document.getElementById('telefone').value = user.telefone || '';
+            preview.src = user.foto_perfil_url || 'assets/images/placeholder.jpg';
+        } catch (error) {
+            statusMessage.textContent = 'Erro ao carregar seu perfil.';
+            statusMessage.style.color = 'red';
+        }
+    });
+
+    // 2. Envia as atualizações (com FormData para a foto)
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        statusMessage.textContent = 'Salvando...';
+        statusMessage.style.color = 'blue';
+
+        const formData = new FormData(form);
+        // O campo de senha só é enviado se tiver valor
+        if (!formData.get('senha')) {
+            formData.delete('senha');
+        }
+
+        try {
+            const response = await fetch('/api/meu-perfil', {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }, // Sem 'Content-Type', o FormData cuida disso
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                statusMessage.textContent = 'Perfil atualizado com sucesso!';
+                statusMessage.style.color = 'green';
+                setTimeout(() => window.location.href = 'perfil.html', 1500);
+            } else {
+                throw new Error(result.message || 'Erro desconhecido.');
+            }
+        } catch (error) {
+            statusMessage.textContent = `Erro: ${error.message}`;
+            statusMessage.style.color = 'red';
+        }
+    });
+  </script>
+</body>
+</html>

@@ -28,6 +28,16 @@
         #form-message { margin-top: 15px; font-weight: bold; text-align: center; }
         .delete-btn { background-color: #e74c3c; color: white; padding: 5px 10px; font-size: 12px; width: auto; margin: 0; }
         .delete-btn:hover { background-color: #c0392b; }
+        .edit-btn {
+        background-color: #3498db;
+        color: white;
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        margin-right: 5px;
+        }
+        .edit-btn:hover { background-color: #2980b9; }
     </style>
 </head>
 <body>
@@ -104,7 +114,10 @@
                             <tr>
                                 <td>${q.nome}</td>
                                 <td>${q.tipo}</td>
-                                <td><button class="delete-btn" data-id="${q.id}">Apagar</button></td>
+                                <td>
+                                    <a href="editar-quadra.html?id=${q.id}" class="edit-btn">Editar</a>
+                                    <button class="delete-btn" data-id="${q.id}">Apagar</button>
+                                </td>
                             </tr>
                         `;
                         quadrasContainer.innerHTML += tr;
