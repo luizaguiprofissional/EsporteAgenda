@@ -11,7 +11,6 @@
     <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css">
     <link rel="stylesheet" type="text/css" href="assets/css/owl-carousel.css">
     <link rel="stylesheet" href="assets/css/tooplate-artxibition.css">
-
     <link rel="stylesheet" href="assets/css/custom-overrides.css">
 
 </head>
@@ -33,12 +32,11 @@
                 <div class="col-12">
                     <nav class="main-nav">
                         <a href="home.html" class="logo">Esporte<em>Agenda</em></a>
-                        <ul class="nav">
-                            <li><a href="home.html" class="active">Início</a></li>
+                        
+                        <ul class="nav" id="main-nav-ul"> <li><a href="home.html" class="active">Início</a></li>
                             <li><a href="index.html">Alugue uma quadra</a></li>
                             <li><a href="principais-eventos.html">Quadras Anunciadas</a></li>
-                            <li><div id="user-nav-placeholder"></div></li>
-                        </ul>
+                            </ul>
                         <a class='menu-trigger'>
                             <span>Menu</span>
                         </a>
@@ -133,13 +131,25 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const userNav = document.getElementById('user-nav-placeholder');
+            const mainNavUl = document.getElementById('main-nav-ul'); // Acha a lista <ul>
+
+            // 1. Gerencia Login/Logout
             const token = localStorage.getItem('accessToken');
             const userName = localStorage.getItem('userName');
             if (token && userName) {
-                userNav.innerHTML = `<a href="perfil.html">Meu Perfil</a><a href="#" onclick="logout()">Sair</a>`;
+                // Se estiver logado, cria e adiciona os <li> de Perfil e Sair
+                const perfilLi = document.createElement('li');
+                perfilLi.innerHTML = `<a href="perfil.html">Meu Perfil</a>`;
+                mainNavUl.appendChild(perfilLi);
+
+                const logoutLi = document.createElement('li');
+                logoutLi.innerHTML = `<a href="#" onclick="logout()">Sair</a>`;
+                mainNavUl.appendChild(logoutLi);
             } else {
-                userNav.innerHTML = '<a href="login.html">Login / Registrar</a>';
+                // Se não estiver logado, cria e adiciona o <li> de Login
+                const loginLi = document.createElement('li');
+                loginLi.innerHTML = `<a href="login.html">Login / Registrar</a>`;
+                mainNavUl.appendChild(loginLi);
             }
 
             // 2. Busca e exibe as quadras
@@ -149,30 +159,27 @@
                 const data = await response.json();
                 const quadras = data.quadras;
 
-                // Define o título e subtítulo fixos (já estão no HTML, mas garantimos aqui)
                 document.getElementById('destaque-titulo').textContent = 'Bem-Vindo';
                 document.getElementById('destaque-subtitulo').textContent = 'ao EsporteAgenda';
 
                 if (quadras && quadras.length > 0) {
-                    // Pega a primeira quadra APENAS para a seção de destaque principal
                     const destaque = quadras[0];
                     const imagemSrc = destaque.imagem_url.includes('/uploads/')
                         ? destaque.imagem_url
                         : (destaque.imagem_url.startsWith('/') ? destaque.imagem_url : '/assets/images/' + destaque.imagem_url.split('/').pop());
 
                     document.getElementById('destaque-imagem').src = imagemSrc;
-                     document.getElementById('destaque-imagem').onerror = function() { this.src='/assets/images/placeholder.jpg'; }; // Fallback
+                     document.getElementById('destaque-imagem').onerror = function() { this.src='/assets/images/placeholder.jpg'; };
                     document.getElementById('destaque-nome-quadra').textContent = destaque.nome;
                     document.getElementById('destaque-link').href = `index.html?quadra=${destaque.id}`;
 
-                    // Pega o restante das quadras para a lista "Outros lugares"
                     const outrasQuadras = quadras.slice(1);
                     const listaElement = document.getElementById('outras-quadras-lista');
                     listaElement.innerHTML = '';
 
                     if (outrasQuadras.length === 0 && quadras.length === 1){
                          listaElement.innerHTML = '<li>Nenhuma outra quadra encontrada no momento.</li>';
-                    } else if (outrasQuadras.length > 0) { // Garante que só itera se houver outras quadras
+                    } else if (outrasQuadras.length > 0) {
                         outrasQuadras.forEach(quadra => {
                             const listItem = `
                                 <li>
@@ -187,7 +194,7 @@
                             `;
                             listaElement.innerHTML += listItem;
                         });
-                    } else { // Caso não haja nenhuma quadra no total
+                    } else {
                          listaElement.innerHTML = '<li>Nenhuma quadra encontrada no momento.</li>';
                     }
                 } else {

@@ -194,3 +194,19 @@
 .page-heading-about span {
     color: #000000; /* Preto */
 }
+.court-item input[type="radio"] {
+    display: none;
+}
+
+/* --- ADICIONE ESTE NOVO BLOCO --- */
+.court-item-info p.court-description {
+    font-size: 13px;
+    color: #777;
+    margin-top: 5px;
+    /* Limita o texto a 2 linhas para não quebrar o layout */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}

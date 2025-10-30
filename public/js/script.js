@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- 2. Função carregarQuadras ---
+    // --- 2. Função carregarQuadras (MODIFICADA) ---
     async function carregarQuadras() {
         try {
             const response = await fetch('/api/quadras');
@@ -49,15 +49,21 @@ document.addEventListener('DOMContentLoaded', () => {
             quadrasContainer.innerHTML = '';
             data.quadras.forEach(quadra => {
                 const imagemSrc = quadra.imagem_url && quadra.imagem_url.startsWith('/') ? quadra.imagem_url : `/uploads/${quadra.imagem_url}`; // Ajuste para uploads
+                
+                // ----- MODIFICAÇÃO AQUI -----
                 const courtItemHTML = `
                     <label class="court-item" for="quadra-${quadra.id}">
                         <input type="radio" name="quadra-radio" id="quadra-${quadra.id}" value="${quadra.id}" class="court-radio">
-                        <img src="${imagemSrc}" alt="${quadra.nome}" onerror="this.src='/assets/images/placeholder.jpg';"> <div class="court-item-info">
+                        <img src="${imagemSrc}" alt="${quadra.nome}" onerror="this.src='/assets/images/placeholder.jpg';">
+                        <div class="court-item-info">
                             <h3 class="court-name">${quadra.nome}</h3>
                             <p>${quadra.tipo}</p>
+                            <p class="court-description">${quadra.descricao || 'Sem descrição.'}</p> 
                         </div>
                     </label>
                 `;
+                // ----- FIM DA MODIFICAÇÃO -----
+
                 quadrasContainer.innerHTML += courtItemHTML;
             });
 

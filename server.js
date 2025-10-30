@@ -1,4 +1,4 @@
-// server.js (COM PERFIS DE CLIENTE E DONO)
+// server.js - VERSÃO 100% COMPLETA (COM CAMPO DE DESCRIÇÃO NO CADASTRO)
 
 require('dotenv').config();
 const express = require('express');
@@ -187,10 +187,7 @@ app.post('/api/auth/forgot-password', (req, res) => {
                 to: user.email,
                 from: process.env.EMAIL_USER,
                 subject: 'Recuperação de Senha - EsporteAgenda',
-                text: `Você está recebendo este e-mail porque solicitou a redefinição de senha.\n\n` +
-                      `Por favor, clique no link a seguir ou cole no seu navegador para completar o processo:\n\n` +
-                      `http://${req.headers.host}/reset-password.html?token=${token}\n\n` +
-                      `Se você não solicitou isso, por favor, ignore este e-mail.\n`
+                text: `Link: http://${req.headers.host}/reset-password.html?token=${token}`
             };
             try { await transporter.sendMail(mailOptions); res.status(200).json({ message: 'Se um e-mail cadastrado foi fornecido, um link foi enviado.' }); } 
             catch (error) { console.error("Erro ao enviar email:", error); res.status(500).json({ message: 'Erro ao enviar o email de recuperação.' }); }
@@ -227,7 +224,7 @@ app.post('/api/auth/reset-password', (req, res) => {
     });
 });
 
-// --- NOVAS ROTAS DE PERFIL (PARA CLIENTE E DONO) ---
+// --- ROTAS DE PERFIL (PARA CLIENTE E DONO) ---
 
 app.get('/api/meu-perfil', authenticateToken, (req, res) => {
     const usuario_id = req.user.id;
@@ -252,19 +249,16 @@ app.put('/api/meu-perfil', [authenticateToken, upload.single('fotoPerfil')], asy
     let campos = [];
     let sqlSetPartes = [];
 
-    // Adiciona campos de texto se eles foram enviados
     if (nome) { sqlSetPartes.push('nome = ?'); campos.push(nome); }
     if (email) { sqlSetPartes.push('email = ?'); campos.push(email); }
-    if (telefone) { sqlSetPartes.push('telefone = ?'); campos.push(telefone); }
+    if (telefone || telefone === '') { sqlSetPartes.push('telefone = ?'); campos.push(telefone); }
 
-    // Adiciona foto de perfil se foi enviada
     if (req.file) {
         const foto_url = `/uploads/perfis/${req.file.filename}`;
         sqlSetPartes.push('foto_perfil_url = ?');
         campos.push(foto_url);
     }
 
-    // Adiciona nova senha se foi enviada
     if (senha) {
         try {
             const hashedPassword = await bcrypt.hash(senha, 10);
@@ -432,18 +426,18 @@ app.post('/api/reservas', [authenticateToken, authorizeCliente], (req, res) => {
                         });
                     }
                 });
-        }); // Fim do BEGIN TRANSACTION
-    }); // Fim do db.serialize
+        });
+    });
 });
 
 // --- ROTAS EXCLUSIVAS PARA DONOS DE QUADRA ---
 
 app.post('/api/quadras', [authenticateToken, authorizeDono, upload.single('quadraImage')], (req, res) => {
-    const { nome, tipo } = req.body; // Campos antigos
+    const { nome, tipo, descricao } = req.body; // Pega a descrição
     const dono_id = req.user.id;
 
-    if (!nome || !tipo) {
-        return res.status(400).json({ message: 'Nome e tipo são obrigatórios.' });
+    if (!nome || !tipo || !descricao) { // Verifica a descrição
+        return res.status(400).json({ message: 'Nome, tipo e descrição são obrigatórios.' });
     }
     if (!req.file) {
         return res.status(400).json({ message: 'A imagem da quadra é obrigatória.' });
@@ -451,9 +445,10 @@ app.post('/api/quadras', [authenticateToken, authorizeDono, upload.single('quadr
 
     const imagem_url = `/uploads/${req.file.filename}`;
 
-    // Atualiza o SQL para incluir os novos campos (com valores padrão vazios)
-    const sql = `INSERT INTO quadras (nome, tipo, imagem_url, dono_id, endereco, horario_func, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    db.run(sql, [nome, tipo, imagem_url, dono_id, '', '', ''], function(err) {
+    // Adiciona a 'descricao' ao INSERT
+    const sql = `INSERT INTO quadras (nome, tipo, imagem_url, dono_id, descricao, endereco, horario_func) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    // Preenche com valores (descricao entra, endereco e horario_func ficam vazios por enquanto)
+    db.run(sql, [nome, tipo, imagem_url, dono_id, descricao, '', ''], function(err) {
         if (err) {
              console.error("Erro DB Insert Quadra:", err);
              return res.status(500).json({ error: err.message });

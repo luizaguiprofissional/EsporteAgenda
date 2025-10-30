@@ -17,7 +17,8 @@
         .form-section, .list-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
         .form-group { display: flex; flex-direction: column; margin-bottom: 15px; text-align: left; }
         .form-group label { font-weight: bold; margin-bottom: 5px; }
-        .form-group input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        /* Adicionado textarea ao estilo */
+        .form-group input, .form-group textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-family: 'Poppins', sans-serif; }
         button { background: #ffcc00; border: none; border-radius: 6px; padding: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; font-size: 16px; margin-top: 10px; }
         button:hover { background: #ff9900; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -53,16 +54,20 @@
             <h2>Cadastrar Nova Quadra</h2>
             <form id="form-nova-quadra">
                 <div class="form-group">
-                    <label>Nome da Quadra</label>
+                    <label for="quadra-nome">Nome da Quadra</label>
                     <input type="text" id="quadra-nome" required>
                 </div>
                 <div class="form-group">
-                    <label>Tipo de Piso (Ex: Saibro, Cimento)</label>
+                    <label for="quadra-tipo">Tipo de Piso (Ex: Saibro, Cimento)</label>
                     <input type="text" id="quadra-tipo" required>
                 </div>
                 <div class="form-group">
-                    <label>Imagem da Quadra</label>
+                    <label for="quadra-imagem">Imagem da Quadra</label>
                     <input type="file" id="quadra-imagem" name="quadraImage" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <label for="quadra-descricao">Descrição da Quadra</label>
+                    <textarea id="quadra-descricao" rows="3" placeholder="Ex: Quadra coberta, vestiário, estacionamento..." required></textarea>
                 </div>
                 <button type="submit">Cadastrar Quadra</button>
                 <p id="form-message"></p>
@@ -76,7 +81,7 @@
                     <tr>
                         <th>Nome</th>
                         <th>Tipo</th>
-                        <th>Ações</th>
+                        <th>Descrição</th> <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody id="minhas-quadras-container">
@@ -103,18 +108,20 @@
             const messageEl = document.getElementById('form-message');
 
             async function carregarMinhasQuadras() {
-                const headers = { 'Authorization': `Bearer ${token}` };
-                const response = await fetch('/api/minhas-quadras', { headers });
-                const data = await response.json();
-                
-                quadrasContainer.innerHTML = '';
-                if (data.quadras && data.quadras.length > 0) {
+                try {
+                    const headers = { 'Authorization': `Bearer ${token}` };
+                    const response = await fetch('/api/minhas-quadras', { headers });
+                    const data = await response.json();
+                    
+                    quadrasContainer.innerHTML = '';
+                    if (data.quadras && data.quadras.length > 0) {
                      data.quadras.forEach(q => {
+                        // LINHA DA TABELA MODIFICADA
                         const tr = `
                             <tr>
                                 <td>${q.nome}</td>
                                 <td>${q.tipo}</td>
-                                <td>
+                                <td>${q.descricao || 'Sem descrição'}</td> <td>
                                     <a href="editar-quadra.html?id=${q.id}" class="edit-btn">Editar</a>
                                     <button class="delete-btn" data-id="${q.id}">Apagar</button>
                                 </td>
@@ -123,7 +130,12 @@
                         quadrasContainer.innerHTML += tr;
                     });
                 } else {
-                    quadrasContainer.innerHTML = '<tr><td colspan="3" style="text-align:center;">Você ainda não cadastrou nenhuma quadra.</td></tr>';
+                    // COLSPAN ATUALIZADO
+                    quadrasContainer.innerHTML = '<tr><td colspan="4" style="text-align:center;">Você ainda não cadastrou nenhuma quadra.</td></tr>';
+                }
+                } catch (error) {
+                    console.error('Erro ao carregar quadras:', error);
+                    quadrasContainer.innerHTML = '<tr><td colspan="4" style="text-align:center;">Erro ao carregar quadras.</td></tr>';
                 }
             }
             
@@ -134,9 +146,14 @@
                 const formData = new FormData();
                 formData.append('nome', document.getElementById('quadra-nome').value);
                 formData.append('tipo', document.getElementById('quadra-tipo').value);
+                formData.append('descricao', document.getElementById('quadra-descricao').value); // CAMPO ADICIONADO
                 const imagemInput = document.getElementById('quadra-imagem');
                 if (imagemInput.files.length > 0) {
                     formData.append('quadraImage', imagemInput.files[0]);
+                } else {
+                     messageEl.textContent = 'Por favor, selecione uma imagem.';
+                     messageEl.style.color = 'red';
+                     return;
                 }
 
                 try {

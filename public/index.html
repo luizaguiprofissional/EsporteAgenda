@@ -12,10 +12,10 @@
     <link rel="stylesheet" href="assets/css/tooplate-artxibition.css">
 
     <link rel="stylesheet" href="assets/css/booking-style.css">
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="assets/css/custom-overrides.css"> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script> </head>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script> 
+</head>
 
 <body>
     <div id="js-preloader" class="js-preloader">
@@ -30,11 +30,11 @@
                 <div class="col-12">
                     <nav class="main-nav">
                         <a href="home.html" class="logo">Esporte<em>Agenda</em></a>
-                        <ul class="nav">
-                            <li><a href="home.html">Início</a></li>
+                        
+                        <ul class="nav" id="main-nav-ul"> <li><a href="home.html">Início</a></li>
                             <li><a href="index.html" class="active">Alugue uma quadra</a></li>
-                            <li><a href="principais-eventos.html">Principais Eventos</a></li> <li><div id="user-nav-placeholder"></div></li>
-                        </ul>
+                            <li><a href="principais-eventos.html">Quadras Anunciadas</a></li>
+                            </ul>
                         <a class='menu-trigger'><span>Menu</span></a>
                     </nav>
                 </div>
@@ -98,25 +98,36 @@
     </div>
 
     <footer>
-        </footer>
+       </footer>
 
     <script src="assets/js/jquery-2.1.0.min.js"></script>
     <script src="assets/js/bootstrap.min.js"></script>
     <script src="assets/js/owl-carousel.js"></script>
     <script src="assets/js/scrollreveal.min.js"></script>
-    <script src="assets/js/custom.js"></script>
-
     <script src="js/script.js"></script>
+    <script src="assets/js/custom.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const userNav = document.getElementById('user-nav-placeholder');
+            const mainNavUl = document.getElementById('main-nav-ul'); // Acha a lista <ul>
             const token = localStorage.getItem('accessToken');
             const userName = localStorage.getItem('userName');
+
             if (token && userName) {
-                userNav.innerHTML = `<a href="perfil.html">Meu Perfil</a><a href="#" onclick="logout()">Sair</a>`;
+                // Se estiver logado, cria e adiciona os <li> de Perfil e Sair
+                const perfilLi = document.createElement('li');
+                perfilLi.innerHTML = `<a href="perfil.html">Meu Perfil</a>`;
+                mainNavUl.appendChild(perfilLi);
+
+                const logoutLi = document.createElement('li');
+                logoutLi.innerHTML = `<a href="#" onclick="logout()">Sair</a>`;
+                mainNavUl.appendChild(logoutLi);
+                
             } else {
-                userNav.innerHTML = '<a href="login.html">Login / Registrar</a>';
+                // Se não estiver logado, cria e adiciona o <li> de Login
+                const loginLi = document.createElement('li');
+                loginLi.innerHTML = `<a href="login.html">Login / Registrar</a>`;
+                mainNavUl.appendChild(loginLi);
             }
         });
 

@@ -5,13 +5,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link href="https://fonts.googleapis.com/css?family=Poppins:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&display=swap" rel="stylesheet">
-    <title>Principais Eventos - EsporteAgenda</title>
-
-    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">
+    <title>Quadras Anunciadas - EsporteAgenda</title> <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css">
     <link rel="stylesheet" type="text/css" href="assets/css/owl-carousel.css">
     <link rel="stylesheet" href="assets/css/tooplate-artxibition.css">
-
     <link rel="stylesheet" href="assets/css/custom-overrides.css">
 
 </head>
@@ -29,10 +26,10 @@
                 <div class="col-12">
                     <nav class="main-nav">
                         <a href="home.html" class="logo">Esporte<em>Agenda</em></a>
-                        <ul class="nav">
-                            <li><a href="home.html">Início</a></li>
+                        
+                        <ul class="nav" id="main-nav-ul"> <li><a href="home.html">Início</a></li>
                             <li><a href="index.html">Alugue uma quadra</a></li>
-                            <li><a href="principais-eventos.html" class="active">Principais Eventos</a></li> <li><div id="user-nav-placeholder"></div></li> </ul>
+                            <li><a href="principais-eventos.html" class="active">Quadras Anunciadas</a></li> </ul>
                         <a class='menu-trigger'><span>Menu</span></a>
                     </nav>
                 </div>
@@ -59,7 +56,8 @@
                     </div>
                 </div>
                 <div id="quadras-container" class="row">
-                    <p class="col-12 text-center">Carregando quadras...</p> </div>
+                    <p class="col-12 text-center">Carregando quadras...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -99,14 +97,26 @@
     <script src="assets/js/custom.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const userNav = document.getElementById('user-nav-placeholder');
+            const mainNavUl = document.getElementById('main-nav-ul'); // Acha a lista <ul>
             const quadrasContainer = document.getElementById('quadras-container');
             const token = localStorage.getItem('accessToken');
             const userName = localStorage.getItem('userName');
+
+            // 1. Gerencia o estado de Login/Logout no Header
             if (token && userName) {
-                userNav.innerHTML = `<a href="perfil.html">Meu Perfil</a><a href="#" onclick="logout()">Sair</a>`;
+                // Se estiver logado, cria e adiciona os <li> de Perfil e Sair
+                const perfilLi = document.createElement('li');
+                perfilLi.innerHTML = `<a href="perfil.html">Meu Perfil</a>`;
+                mainNavUl.appendChild(perfilLi);
+
+                const logoutLi = document.createElement('li');
+                logoutLi.innerHTML = `<a href="#" onclick="logout()">Sair</a>`;
+                mainNavUl.appendChild(logoutLi);
             } else {
-                userNav.innerHTML = '<a href="login.html">Login / Registrar</a>';
+                // Se não estiver logado, cria e adiciona o <li> de Login
+                const loginLi = document.createElement('li');
+                loginLi.innerHTML = `<a href="login.html">Login / Registrar</a>`;
+                mainNavUl.appendChild(loginLi);
             }
 
             // 2. Busca e exibe as quadras
@@ -123,12 +133,10 @@
                 }
 
                 data.quadras.forEach(quadra => {
-                    // Decide o caminho da imagem (upload ou asset)
                     const imagemSrc = quadra.imagem_url.includes('/uploads/')
                         ? quadra.imagem_url
                         : (quadra.imagem_url.startsWith('/') ? quadra.imagem_url : '/assets/images/' + quadra.imagem_url.split('/').pop());
 
-                    // Cria o HTML do card para cada quadra
                     const quadraCardHTML = `
                         <div class="col-lg-4 col-md-6">
                             <div class="ticket-item">
@@ -139,7 +147,8 @@
                                     <h4>${quadra.nome}</h4>
                                     <ul>
                                         <li><i class="fa fa-futbol-o"></i> ${quadra.tipo}</li>
-                                        </ul>
+                                        <li style="font-size: 14px; color: #777; padding-top: 5px;">${quadra.descricao || ''}</li> 
+                                    </ul>
                                     <div class="main-dark-button">
                                         <a href="index.html?quadra=${quadra.id}">Ver Disponibilidade</a>
                                     </div>
