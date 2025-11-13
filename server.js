@@ -1,4 +1,4 @@
-// server.js - VERSÃO 100% COMPLETA (COM CAMPO DE DESCRIÇÃO NO CADASTRO)
+// server.js - VERSÃO 100% COMPLETA (CORRIGIDO: 4Err00 e Cadastro de Endereço)
 
 require('dotenv').config();
 const express = require('express');
@@ -9,31 +9,27 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const multer = require('multer');
-const fs = require('fs'); // Importa o File System para criar pastas
+const fs = require('fs');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// --- CONFIGURAÇÃO DO MULTER (Atualizado para 2 tipos de upload) ---
+// --- CONFIGURAÇÃO DO MULTER ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        // Define o destino baseado no nome do campo no formulário
         let dest = 'public/uploads/';
         if (file.fieldname === 'fotoPerfil') {
             dest = 'public/uploads/perfis/';
         }
-        // Garante que o diretório de destino exista
         fs.mkdirSync(dest, { recursive: true });
         cb(null, dest);
     },
     filename: function (req, file, cb) {
-        // Cria um nome de arquivo único
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const extensao = path.extname(file.originalname);
         cb(null, file.fieldname + '-' + uniqueSuffix + extensao);
     }
 });
-
 const upload = multer({ storage: storage });
 
 
@@ -49,31 +45,37 @@ const db = new sqlite3.Database(dbPath, (err) => {
     } else {
         console.log('Conectado ao banco de dados SQLite.');
         db.serialize(() => {
-            // Tabela de Usuários (COM NOVOS CAMPOS)
+            // Tabela de Usuários
             db.run(`CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, email TEXT UNIQUE NOT NULL, senha TEXT NOT NULL, reset_password_token TEXT, reset_password_expires INTEGER)`);
             db.run("ALTER TABLE usuarios ADD COLUMN tipo TEXT DEFAULT 'cliente' NOT NULL", () => {});
-            db.run("ALTER TABLE usuarios ADD COLUMN telefone TEXT", () => {}); // NOVO
-            db.run("ALTER TABLE usuarios ADD COLUMN foto_perfil_url TEXT DEFAULT '/assets/images/placeholder.jpg'", () => {}); // NOVO
+            db.run("ALTER TABLE usuarios ADD COLUMN telefone TEXT", () => {});
+            db.run("ALTER TABLE usuarios ADD COLUMN foto_perfil_url TEXT DEFAULT '/assets/images/placeholder.jpg'", () => {});
 
-            // Tabela de Quadras (COM NOVOS CAMPOS)
+            // Tabela de Quadras
             db.run(`CREATE TABLE IF NOT EXISTS quadras (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, tipo TEXT NOT NULL, imagem_url TEXT)`);
             db.run("ALTER TABLE quadras ADD COLUMN dono_id INTEGER REFERENCES usuarios(id)", () => {});
-            db.run("ALTER TABLE quadras ADD COLUMN endereco TEXT", () => {}); // NOVO
-            db.run("ALTER TABLE quadras ADD COLUMN horario_func TEXT", () => {}); // NOVO
-            db.run("ALTER TABLE quadras ADD COLUMN descricao TEXT", () => {}); // NOVO
+            db.run("ALTER TABLE quadras ADD COLUMN endereco TEXT", () => {});
+            db.run("ALTER TABLE quadras ADD COLUMN horario_func TEXT", () => {});
+            db.run("ALTER TABLE quadras ADD COLUMN descricao TEXT", () => {});
+            db.run("ALTER TABLE quadras ADD COLUMN horario_abertura TEXT DEFAULT '08:00'", () => {});
+            db.run("ALTER TABLE quadras ADD COLUMN horario_fechamento TEXT DEFAULT '22:00'", () => {});
             
             // Tabela de Reservas
             db.run(`CREATE TABLE IF NOT EXISTS reservas (id INTEGER PRIMARY KEY AUTOINCREMENT, quadra_id INTEGER, usuario_id INTEGER, data TEXT NOT NULL, horario TEXT NOT NULL, FOREIGN KEY (quadra_id) REFERENCES quadras (id), FOREIGN KEY (usuario_id) REFERENCES usuarios (id))`);
-
-            // Dados de exemplo (opcional, pode ser removido)
-            const sql_insert = `INSERT OR IGNORE INTO quadras (id, nome, tipo, imagem_url) VALUES
-                (1, 'Quadra de Tênis A', 'Saibro', '/assets/images/quadra-tenis.jpg'),
-                (2, 'Quadra Poliesportiva B', 'Cimento', '/assets/images/quadra-poliesportiva.jpg'),
-                (3, 'Campo de Futebol Society', 'Grama Sintética', '/assets/images/campo-society.jpg')`;
-            db.run(sql_insert);
         });
     }
 });
+
+// --- FUNÇÃO HELPER PARA GERAR HORÁRIOS ---
+function gerarHorarios(abertura, fechamento) {
+    const horarios = [];
+    const startHour = abertura ? parseInt(abertura.split(':')[0], 10) : 8;
+    const endHour = fechamento ? parseInt(fechamento.split(':')[0], 10) : 22;
+    for (let h = startHour; h < endHour; h++) {
+        horarios.push(h.toString().padStart(2, '0') + ':00');
+    }
+    return horarios;
+}
 
 // --- Configuração do Nodemailer ---
 const transporter = nodemailer.createTransport({
@@ -303,13 +305,26 @@ app.get('/api/horarios/:quadraId/:data', (req, res) => {
     if (!/^\d+$/.test(quadraId) || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
         return res.status(400).json({ error: 'Parâmetros inválidos.' });
     }
-    const horariosDisponiveis = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
-    const sql = 'SELECT horario FROM reservas WHERE quadra_id = ? AND data = ?';
-    db.all(sql, [quadraId, data], (err, rows) => {
-        if (err) { res.status(500).json({ error: err.message }); return; }
-        const horariosReservados = rows.map(row => row.horario);
-        const horariosLivres = horariosDisponiveis.filter(h => !horariosReservados.includes(h));
-        res.json({ horarios: horariosLivres });
+
+    db.get('SELECT horario_abertura, horario_fechamento FROM quadras WHERE id = ?', [quadraId], (errQuadra, quadra) => {
+        if (errQuadra) {
+            console.error("Erro DB Get Horarios (Busca Quadra):", errQuadra);
+            return res.status(500).json({ error: errQuadra.message });
+        }
+        if (!quadra) { return res.status(404).json({ error: 'Quadra não encontrada.' }); }
+
+        const horariosPossiveis = gerarHorarios(quadra.horario_abertura, quadra.horario_fechamento);
+
+        const sql = 'SELECT horario FROM reservas WHERE quadra_id = ? AND data = ?';
+        db.all(sql, [quadraId, data], (err, rows) => {
+            if (err) {
+                console.error("Erro DB Get Horarios (Busca Reservas):", err);
+                res.status(500).json({ error: err.message }); return;
+            }
+            const horariosReservados = rows.map(row => row.horario);
+            const horariosLivres = horariosPossiveis.filter(h => !horariosReservados.includes(h));
+            res.json({ horarios: horariosLivres });
+        });
     });
 });
 
@@ -322,26 +337,37 @@ app.post('/api/horarios-multi', [authenticateToken], (req, res) => {
          return res.status(400).json({ error: 'Formato de data inválido. Use AAAA-MM-DD.' });
     }
 
-    const horariosPossiveis = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'];
-    const placeholders = dates.map(() => '?').join(',');
-    const sql = `SELECT data, horario FROM reservas WHERE quadra_id = ? AND data IN (${placeholders})`;
-
-    db.all(sql, [quadraId, ...dates], (err, rows) => {
-        if (err) {
-            console.error("Erro ao buscar reservas múltiplas:", err);
-            return res.status(500).json({ error: "Erro ao consultar banco de dados." });
+    db.get('SELECT horario_abertura, horario_fechamento FROM quadras WHERE id = ?', [quadraId], (errQuadra, quadra) => {
+        if (errQuadra) {
+            console.error("Erro DB Get Horarios-Multi (Busca Quadra):", errQuadra);
+            return res.status(500).json({ error: errQuadra.message });
         }
-        const horariosOcupadosPorData = {};
-        dates.forEach(date => { horariosOcupadosPorData[date] = new Set(); });
-        rows.forEach(row => {
-            if(horariosOcupadosPorData[row.data]) {
-                 horariosOcupadosPorData[row.data].add(row.horario);
+        if (!quadra) { return res.status(404).json({ error: 'Quadra não encontrada.' }); }
+
+        const horariosPossiveis = gerarHorarios(quadra.horario_abertura, quadra.horario_fechamento);
+
+        const placeholders = dates.map(() => '?').join(',');
+        const sql = `SELECT data, horario FROM reservas WHERE quadra_id = ? AND data IN (${placeholders})`;
+
+        db.all(sql, [quadraId, ...dates], (err, rows) => {
+            if (err) {
+                console.error("Erro ao buscar reservas múltiplas:", err);
+                return res.status(500).json({ error: "Erro ao consultar banco de dados." });
             }
+            
+            const horariosOcupadosPorData = {};
+            dates.forEach(date => { horariosOcupadosPorData[date] = new Set(); });
+            rows.forEach(row => {
+                if(horariosOcupadosPorData[row.data]) {
+                     horariosOcupadosPorData[row.data].add(row.horario);
+                }
+            });
+            
+            const horariosComuns = horariosPossiveis.filter(horario => {
+                return dates.every(date => !horariosOcupadosPorData[date].has(horario));
+            });
+            res.json({ horariosComuns: horariosComuns });
         });
-        const horariosComuns = horariosPossiveis.filter(horario => {
-            return dates.every(date => !horariosOcupadosPorData[date].has(horario));
-        });
-        res.json({ horariosComuns: horariosComuns });
     });
 });
 
@@ -432,12 +458,14 @@ app.post('/api/reservas', [authenticateToken, authorizeCliente], (req, res) => {
 
 // --- ROTAS EXCLUSIVAS PARA DONOS DE QUADRA ---
 
+// ----- ROTA POST /api/quadras (CORRIGIDA PARA INCLUIR 'endereco') -----
 app.post('/api/quadras', [authenticateToken, authorizeDono, upload.single('quadraImage')], (req, res) => {
-    const { nome, tipo, descricao } = req.body; // Pega a descrição
+    // Pega todos os novos campos do formulário
+    const { nome, tipo, descricao, horario_abertura, horario_fechamento, endereco } = req.body;
     const dono_id = req.user.id;
 
-    if (!nome || !tipo || !descricao) { // Verifica a descrição
-        return res.status(400).json({ message: 'Nome, tipo e descrição são obrigatórios.' });
+    if (!nome || !tipo || !descricao || !horario_abertura || !horario_fechamento || !endereco) {
+        return res.status(400).json({ message: 'Todos os campos (nome, tipo, descrição, horários e endereço) são obrigatórios.' });
     }
     if (!req.file) {
         return res.status(400).json({ message: 'A imagem da quadra é obrigatória.' });
@@ -445,10 +473,10 @@ app.post('/api/quadras', [authenticateToken, authorizeDono, upload.single('quadr
 
     const imagem_url = `/uploads/${req.file.filename}`;
 
-    // Adiciona a 'descricao' ao INSERT
-    const sql = `INSERT INTO quadras (nome, tipo, imagem_url, dono_id, descricao, endereco, horario_func) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    // Preenche com valores (descricao entra, endereco e horario_func ficam vazios por enquanto)
-    db.run(sql, [nome, tipo, imagem_url, dono_id, descricao, '', ''], function(err) {
+    // Atualiza o SQL para incluir todos os campos
+    const sql = `INSERT INTO quadras (nome, tipo, imagem_url, dono_id, descricao, horario_abertura, horario_fechamento, endereco, horario_func) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    // Preenche com valores (horario_func fica vazio por enquanto, já que temos os horários específicos)
+    db.run(sql, [nome, tipo, imagem_url, dono_id, descricao, horario_abertura, horario_fechamento, endereco, ''], function(err) {
         if (err) {
              console.error("Erro DB Insert Quadra:", err);
              return res.status(500).json({ error: err.message });
@@ -536,13 +564,12 @@ app.delete('/api/quadras/:id', [authenticateToken, authorizeDono], (req, res) =>
     });
 });
 
-// --- NOVAS ROTAS PARA EDITAR QUADRAS ESPECÍFICAS ---
-
 app.get('/api/quadra-detalhes/:id', [authenticateToken, authorizeDono], (req, res) => {
     const quadraId = req.params.id;
     const dono_id = req.user.id;
     
     if (!/^\d+$/.test(quadraId)){
+        // ----- LINHA CORRIGIDA (REMOVIDO O ERRO '4Err00') -----
         return res.status(400).json({ message: "ID da quadra inválido." });
     }
 
@@ -562,13 +589,15 @@ app.get('/api/quadra-detalhes/:id', [authenticateToken, authorizeDono], (req, re
 app.put('/api/quadra-detalhes/:id', [authenticateToken, authorizeDono], (req, res) => {
     const quadraId = req.params.id;
     const dono_id = req.user.id;
-    const { nome, endereco, horario_func, descricao } = req.body;
+    // ----- CORRIGIDO: Removido 'horario_func' da validação -----
+    const { nome, endereco, horario_func, descricao, horario_abertura, horario_fechamento } = req.body;
 
     if (!/^\d+$/.test(quadraId)){
         return res.status(400).json({ message: "ID da quadra inválido." });
     }
-    if (!nome || !endereco || !horario_func || !descricao) {
-        return res.status(400).json({ message: "Todos os campos são obrigatórios." });
+    // ----- CORRIGIDO: Removido 'horario_func' da validação -----
+    if (!nome || !endereco || !descricao || !horario_abertura || !horario_fechamento) {
+        return res.status(400).json({ message: "Todos os campos (exceto Horário de Funcionamento em texto) são obrigatórios." });
     }
 
     const sqlVerify = `SELECT dono_id FROM quadras WHERE id = ?`;
@@ -584,8 +613,18 @@ app.put('/api/quadra-detalhes/:id', [authenticateToken, authorizeDono], (req, re
             return res.status(403).json({ message: "Você não tem permissão para editar esta quadra." });
         }
 
-        const sqlUpdate = `UPDATE quadras SET nome = ?, endereco = ?, horario_func = ?, descricao = ? WHERE id = ? AND dono_id = ?`;
-        db.run(sqlUpdate, [nome, endereco, horario_func, descricao, quadraId, dono_id], function(errUpdate) {
+        // ----- CORRIGIDO: Atualiza 'horario_func' com o valor recebido (pode ser vazio) e remove da validação estrita -----
+        const sqlUpdate = `UPDATE quadras SET 
+            nome = ?, 
+            endereco = ?, 
+            horario_func = ?, 
+            descricao = ?, 
+            horario_abertura = ?, 
+            horario_fechamento = ? 
+        WHERE id = ? AND dono_id = ?`;
+        
+        // Passa o 'horario_func' recebido (pode ser vazio, já que o removemos do formulário de edição)
+        db.run(sqlUpdate, [nome, endereco, horario_func || '', descricao, horario_abertura, horario_fechamento, quadraId, dono_id], function(errUpdate) {
             if (errUpdate) {
                  console.error("Erro DB Update Quadra:", errUpdate);
                 return res.status(500).json({ message: "Erro ao salvar as alterações da quadra." });

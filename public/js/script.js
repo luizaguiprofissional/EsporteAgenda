@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="court-item-info">
                             <h3 class="court-name">${quadra.nome}</h3>
                             <p>${quadra.tipo}</p>
+                            <p class="court-address">${quadra.endereco || 'Endereço não informado.'}</p>
                             <p class="court-description">${quadra.descricao || 'Sem descrição.'}</p> 
                         </div>
                     </label>

@@ -6,18 +6,70 @@
   <title>Editar Quadra - EsporteAgenda</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
-    body { font-family: 'Poppins', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f8ff; }
-    .container { text-align: center; background: white; padding: 30px; border-radius: 12px; box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); width: 420px; }
+    
+    /* --- CSS DO FUNDO ADICIONADO --- */
+    body { 
+        font-family: 'Poppins', sans-serif; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        min-height: 100vh; 
+        padding: 40px 0; /* Ajustado padding */
+        background: white; /* Fundo branco base */
+        position: relative; 
+        overflow-y: auto; /* Permitir rolagem */
+        margin: 0;
+    }
+
+    .background-shape {
+      position: absolute;
+      background: #00ff6a;
+      filter: blur(10px);
+      opacity: 0.8;
+      z-index: -1;
+      border-radius: 30px;
+      animation: flutuar 10s infinite alternate ease-in-out;
+    }
+
+    .shape1 { width: 200px; height: 200px; top: -50px; left: -50px; border-radius: 50%; background: #2bbf2b; }
+    .shape2 { width: 300px; height: 250px; bottom: 50px; left: 30px; transform: rotate(20deg); }
+    .shape3 { width: 400px; height: 300px; top: 50px; right: -100px; transform: rotate(-15deg); }
+    .shape4 { width: 100%; height: 50px; background: #2bbf2b; position: absolute; bottom: 0; left: 0; }
+
+    @keyframes flutuar {
+      from { transform: translateY(0); }
+      to { transform: translateY(15px); }
+    }
+    /* --- FIM DO CSS DO FUNDO --- */
+
+    .container { 
+        text-align: center; 
+        background: white; 
+        padding: 30px; 
+        border-radius: 12px; 
+        box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); 
+        width: 90%; 
+        max-width: 450px; 
+        position: relative; /* Adicionado */
+        z-index: 1; /* Adicionado */
+    }
     h2 { color: #333; font-weight: 700; margin-bottom: 10px; }
     .input-group { display: flex; flex-direction: column; margin: 12px 0; text-align: left; }
     .input-group label { font-weight: bold; margin-bottom: 5px; }
-    .input-group input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; font-family: 'Poppins', sans-serif; }
-    .button { background: #ffcc00; color: black; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.3s; }
+    .input-group input, textarea, select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; font-family: 'Poppins', sans-serif; box-sizing: border-box; width: 100%; }
+    .button { background: #ffcc00; color: black; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
     .button:hover { background: #ff9900; }
     #status-message { margin-top: 15px; font-weight: 600; }
+    .time-inputs { display: flex; gap: 15px; }
+    .time-inputs .form-group { flex: 1; }
   </style>
 </head>
 <body>
+  <div class="background-shape shape1"></div>
+  <div class="background-shape shape2"></div>
+  <div class="background-shape shape3"></div>
+  <div class="background-shape shape4"></div>
+
   <div class="container">
     <h2>Editar Informações da Quadra</h2>
     <form id="form-editar-quadra">
@@ -30,13 +82,21 @@
         <input type="text" id="endereco" name="endereco" required />
       </div>
       <div class="input-group">
-        <label for="horario_func">Horário de Funcionamento</label>
-        <input type="text" id="horario_func" name="horario_func" placeholder="Ex: 08:00 às 22:00" required />
-      </div>
-      <div class="input-group">
         <label for="descricao">Descrição</label>
         <textarea rows="3" id="descricao" name="descricao" required></textarea>
       </div>
+
+      <div class="time-inputs">
+        <div class="form-group">
+            <label for="horario_abertura">Abre às:</label>
+            <input type="time" id="horario_abertura" name="horario_abertura" step="3600" required>
+        </div>
+        <div class="form-group">
+            <label for="horario_fechamento">Fecha às:</label>
+            <input type="time" id="horario_fechamento" name="horario_fechamento" step="3600" required>
+        </div>
+      </div>
+
       <button type="submit" class="button">Salvar Alterações</button>
        <p id="status-message"></p>
     </form>
@@ -48,7 +108,6 @@
     const statusMessage = document.getElementById('status-message');
     const token = localStorage.getItem('accessToken');
     
-    // Pega o ID da quadra da URL (ex: editar-quadra.html?id=5)
     const urlParams = new URLSearchParams(window.location.search);
     const quadraId = urlParams.get('id');
 
@@ -73,8 +132,10 @@
             
             document.getElementById('nome').value = quadra.nome || '';
             document.getElementById('endereco').value = quadra.endereco || '';
-            document.getElementById('horario_func').value = quadra.horario_func || '';
             document.getElementById('descricao').value = quadra.descricao || '';
+            document.getElementById('horario_abertura').value = quadra.horario_abertura || '08:00';
+            document.getElementById('horario_fechamento').value = quadra.horario_fechamento || '22:00';
+
         } catch (error) {
             statusMessage.textContent = 'Erro: ' + error.message;
             statusMessage.style.color = 'red';
@@ -90,8 +151,9 @@
         const dados = {
             nome: document.getElementById('nome').value,
             endereco: document.getElementById('endereco').value,
-            horario_func: document.getElementById('horario_func').value,
-            descricao: document.getElementById('descricao').value
+            descricao: document.getElementById('descricao').value,
+            horario_abertura: document.getElementById('horario_abertura').value,
+            horario_fechamento: document.getElementById('horario_fechamento').value
         };
 
         try {

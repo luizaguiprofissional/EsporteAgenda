@@ -17,27 +17,20 @@
         .form-section, .list-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
         .form-group { display: flex; flex-direction: column; margin-bottom: 15px; text-align: left; }
         .form-group label { font-weight: bold; margin-bottom: 5px; }
-        /* Adicionado textarea ao estilo */
-        .form-group input, .form-group textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-family: 'Poppins', sans-serif; }
+        .form-group input, .form-group textarea, .form-group select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-family: 'Poppins', sans-serif; box-sizing: border-box; width: 100%; }
+        .time-inputs { display: flex; gap: 15px; }
+        .time-inputs .form-group { flex: 1; }
         button { background: #ffcc00; border: none; border-radius: 6px; padding: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; font-size: 16px; margin-top: 10px; }
         button:hover { background: #ff9900; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; word-break: break-word; } /* Adicionado word-break */
         th { background: #f0f0f0; color: #333; }
         .links { margin-top: 25px; display: flex; justify-content: space-between; }
         .links a { color: #007bff; font-weight: bold; text-decoration: none; }
         #form-message { margin-top: 15px; font-weight: bold; text-align: center; }
         .delete-btn { background-color: #e74c3c; color: white; padding: 5px 10px; font-size: 12px; width: auto; margin: 0; }
         .delete-btn:hover { background-color: #c0392b; }
-        .edit-btn {
-        background-color: #3498db;
-        color: white;
-        padding: 5px 10px;
-        font-size: 12px;
-        border-radius: 6px;
-        text-decoration: none;
-        margin-right: 5px;
-        }
+        .edit-btn { background-color: #3498db; color: white; padding: 5px 10px; font-size: 12px; border-radius: 6px; text-decoration: none; margin-right: 5px; }
         .edit-btn:hover { background-color: #2980b9; }
     </style>
 </head>
@@ -65,10 +58,28 @@
                     <label for="quadra-imagem">Imagem da Quadra</label>
                     <input type="file" id="quadra-imagem" name="quadraImage" accept="image/*" required>
                 </div>
+                
+                <div class="form-group">
+                    <label for="quadra-endereco">Endereço</label>
+                    <input type="text" id="quadra-endereco" placeholder="Ex: Rua, Número, Bairro" required>
+                </div>
+
                 <div class="form-group">
                     <label for="quadra-descricao">Descrição da Quadra</label>
                     <textarea id="quadra-descricao" rows="3" placeholder="Ex: Quadra coberta, vestiário, estacionamento..." required></textarea>
                 </div>
+                
+                <div class="time-inputs">
+                    <div class="form-group">
+                        <label for="quadra-abertura">Horário de Abertura:</label>
+                        <input type="time" id="quadra-abertura" name="horario_abertura" step="3600" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quadra-fechamento">Horário de Fechamento:</label>
+                        <input type="time" id="quadra-fechamento" name="horario_fechamento" step="3600" required>
+                    </div>
+                </div>
+
                 <button type="submit">Cadastrar Quadra</button>
                 <p id="form-message"></p>
             </form>
@@ -76,12 +87,11 @@
         
         <div class="list-section">
             <h2>Minhas Quadras Cadastradas</h2>
-            <table>
-                <thead>
+            <table style="table-layout: fixed;"> <thead>
                     <tr>
-                        <th>Nome</th>
-                        <th>Tipo</th>
-                        <th>Descrição</th> <th>Ações</th>
+                        <th style="width: 20%;">Nome</th>
+                        <th style="width: 15%;">Tipo</th>
+                        <th style="width: 30%;">Endereço</th> <th style="width: 35%;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="minhas-quadras-container">
@@ -121,7 +131,7 @@
                             <tr>
                                 <td>${q.nome}</td>
                                 <td>${q.tipo}</td>
-                                <td>${q.descricao || 'Sem descrição'}</td> <td>
+                                <td>${q.endereco || 'Não informado'}</td> <td>
                                     <a href="editar-quadra.html?id=${q.id}" class="edit-btn">Editar</a>
                                     <button class="delete-btn" data-id="${q.id}">Apagar</button>
                                 </td>
@@ -146,7 +156,11 @@
                 const formData = new FormData();
                 formData.append('nome', document.getElementById('quadra-nome').value);
                 formData.append('tipo', document.getElementById('quadra-tipo').value);
-                formData.append('descricao', document.getElementById('quadra-descricao').value); // CAMPO ADICIONADO
+                formData.append('descricao', document.getElementById('quadra-descricao').value);
+                formData.append('horario_abertura', document.getElementById('quadra-abertura').value);
+                formData.append('horario_fechamento', document.getElementById('quadra-fechamento').value);
+                formData.append('endereco', document.getElementById('quadra-endereco').value); // CAMPO ADICIONADO
+                
                 const imagemInput = document.getElementById('quadra-imagem');
                 if (imagemInput.files.length > 0) {
                     formData.append('quadraImage', imagemInput.files[0]);
